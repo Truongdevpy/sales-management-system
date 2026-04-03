@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách sản phẩm - Mua sắm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+
+
+    
+    <nav class="bg-slate-800 text-white shadow-lg p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">Mua sắm</h1>
+            <div class="space-x-6 flex items-center">
+                <a href="#" class="hover:text-blue-400 transition">Sản phẩm</a>
+                <a href="cart.html" class="relative hover:text-blue-400 transition">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                    <span class="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                </a>
+                <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center font-bold">B</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto py-10 px-4">
+        
+        <div class="flex justify-between items-end mb-8">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">Khám phá sản phẩm</h2>
+        <p class="text-gray-500">Tìm kiếm những món đồ công nghệ tốt nhất cho bạn</p>
+    </div>
+    
+    <form action="/search" method="GET" class="flex gap-2">
+        <input type="text" 
+               name="query" 
+               placeholder="Tìm sản phẩm..." 
+               value="{{ request.args.get('query', '') }}"
+               class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        
+        <button type="submit" 
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+            Tìm
+        </button>
+    </form>
+</div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+    
+    {% for p in products %}
+    <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group">
+        <div class="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+            {% if p.image_url %}
+                <img src="{{ url_for('static', filename='uploads/' + p.image_url) }}" 
+                     class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+            {% else %}
+                <i class="fas fa-image text-5xl text-gray-400"></i>
+            {% endif %}
+            <div class="absolute top-2 right-2 bg-blue-600 text-white text-[10px] px-2 py-1 rounded">HOT</div>
+        </div>
+
+        <div class="p-5">
+            <h3 class="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition truncate">
+                {{ p.name }}
+            </h3>
+            
+            <p class="text-sm text-gray-500 line-clamp-2 mt-1 h-10">
+                {{ p.description or "Không có mô tả" }}
+            </p>
+
+            <p class="text-sm text-gray-500 line-clamp-2 mt-1 h-10">
+                {{ "Số lượng: " ~ p.quantity or "Hết hàng" }}
+            </p>
+            
+            <div class="mt-4 flex justify-between items-center">
+                <span class="text-blue-600 font-bold text-xl">
+                    {{ "{:,.0f}".format(p.price) }}đ
+                </span>
+                
+                <a href="/product/{{ p.id }}" class="bg-gray-800 text-white p-2 rounded-lg hover:bg-blue-600 transition">
+                    <i class="fas fa-cart-plus"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not products %}
+        <div class="col-span-full text-center py-20">
+            <p class="text-gray-400">Chưa có sản phẩm nào được đăng.</p>
+            <a href="/create" class="text-blue-500 underline">Đăng ngay sản phẩm đầu tiên</a>
+        </div>
+    {% endif %}
+    {% if products %}
+        <div class="col-span-full text-center py-20">
+            <a href="/create" class="text-blue-500 underline">Đăng ngay sản phẩm tiếp theo</a>
+        </div>
+    {% endif %}
+    </main>
+
+</body>
+</html>

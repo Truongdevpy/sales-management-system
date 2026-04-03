@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ product.name }} - Chi tiết</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 p-10">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
+        <div class="md:w-1/2 bg-gray-200 h-96 flex items-center justify-center">
+            {% if product.image_url %}
+                <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" class="w-full h-full object-cover">
+            {% else %}
+                <i class="fas fa-image text-8xl text-gray-400"></i>
+            {% endif %}
+        </div>
+
+        <div class="md:w-1/2 p-8">
+            <h1 class="text-3xl font-bold text-gray-800">{{ product.name }}</h1>
+            <p class="text-2xl text-blue-600 font-semibold mt-4">
+                {{ "{:,.0f}".format(product.price) }} VNĐ
+            </p>
+            <div class="mt-6 border-t pt-4 text-gray-600">
+                <h3 class="font-bold text-gray-800 mb-2">Mô tả sản phẩm:</h3>
+                <p>{{ product.description or "Chưa có mô tả chi tiết." }}</p>
+            </div>
+            
+            <div class="mt-10 flex gap-4">
+                <button class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex-1">
+                    Mua ngay
+                </button>
+                <a href="/list_item" class="border border-gray-300 px-6 py-3 rounded-xl hover:bg-gray-100 transition">
+                    Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sản phẩm & Đơn hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <aside class="w-full md:w-64 bg-slate-800 text-white p-6">
+            <h1 class="text-2xl font-bold mb-8 text-blue-400">Hệ Thống Bán Hàng</h1>
+            <nav class="space-y-4">
+                <a href="/create" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-slate-700 bg-slate-700">
+                    <i class="fas fa-plus-circle mr-2"></i> Đăng sản phẩm
+                </a>
+                <a href="/list_item" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-list mr-2"></i> Sản phẩm đã đăng
+                </a>
+                <a href="/list_item_sold" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-list mr-2"></i> Sản phẩm đã bán
+                </a>
+                <a href="/logout" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất
+                </a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-8">
+            <div class="max-w-4xl mx-auto">
+                
+                <section class="bg-white rounded-xl shadow-md p-6 mb-10">
+                    <h2 class="text-xl font-semibold mb-6 border-b pb-2">Đăng sản phẩm mới</h2>
+                    <form action="/create" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <div class="col-span-2 md:col-span-1">
+        <label class="block text-sm font-medium text-gray-700">Tên sản phẩm</label>
+        <input type="text" name="ten_san_pham" required placeholder="Nhập tên sản phẩm..." 
+               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <div class="col-span-2 md:col-span-1">
+        <label class="block text-sm font-medium text-gray-700">Giá bán (VNĐ)</label>
+        <input type="number" name="gia_ban" required placeholder="0" 
+               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <div class="col-span-2 md:col-span-1">
+        <label class="block text-sm font-medium text-gray-700">Số lượng sản phẩm</label>
+        <input type="number" name="so_luong" required placeholder="0" 
+               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    
+
+    <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Mô tả chi tiết</label>
+        <textarea rows="3" name="mo_ta" placeholder="Thông số kỹ thuật..." 
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+    </div>
+
+    <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Hình ảnh sản phẩm</label>
+        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition relative">
+            <div class="space-y-1 text-center">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
+                <div class="flex text-sm text-gray-600">
+                    <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                        <span>Tải tệp lên</span>
+                        <input id="file-upload" name="anh_san_pham" type="file" class="sr-only" accept="image/*">
+                    </label>
+                    <p class="pl-1">hoặc kéo thả vào đây</p>
+                </div>
+                <p class="text-xs text-gray-500">PNG, JPG tối đa 10MB</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-span-2 flex justify-end">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-medium shadow-sm">
+            <i class="fas fa-save mr-2"></i> Lưu sản phẩm
+        </button>
+    </div>
+</form>
+            </section>
+
+        <section class="bg-white rounded-xl shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold border-b pb-2">Sản phẩm bạn đã đăng</h2>
+        <span class="text-sm text-gray-500 italic">Tổng số: {{ products|length }} sản phẩm</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for p in products %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                                {% if p.image_url %}
+                                    <img src="{{ url_for('static', filename='uploads/' + p.image_url) }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <i class="fas fa-image text-gray-400"></i>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 font-medium text-gray-900">{{ p.name }}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ "{:,.0f}".format(p.price) }}đ
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            {{ p.quantity if p.quantity else '0' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="/edit/{{ p.id }}" class="text-blue-600 hover:text-blue-900 mr-3">Sửa</a>
+                        <a href="/delete/{{ p.id }}" 
+                           onclick="return confirm('Bạn chắc chắn muốn xóa sản phẩm này?')"
+                           class="text-red-600 hover:text-red-900">Xóa</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>        
+
+            </div>
+        </main>
+    </div>
+
+</body>
+
+</html>
