@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Trở Thành Người Bán Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Header/Navbar -->
+    <nav class="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-chart-line text-2xl text-blue-400"></i>
+                <h1 class="text-2xl font-bold">Sales Management</h1>
+            </div>
+            <a href="/dashboard" class="text-sm hover:text-blue-400 transition">← Quay lại Dashboard</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-slate-800 text-white p-6">
+            <div class="mb-8">
+                <h2 class="text-lg font-bold text-blue-400 mb-2">Menu</h2>
+                <div class="h-1 w-12 bg-blue-400 rounded"></div>
+            </div>
+            
+            <nav class="space-y-3">
+                <a href="/dashboard" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-home mr-3"></i> Dashboard
+                </a>
+                <a href="/become-seller" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700 bg-blue-600">
+                    <i class="fas fa-store mr-3"></i> Trở Thành Seller
+                </a>
+                <a href="/create" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-plus-circle mr-3"></i> Đăng Sản Phẩm
+                </a>
+                <a href="/list_item" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-box mr-3"></i> Sản Phẩm
+                </a>
+                <a href="#" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-shopping-cart mr-3"></i> Đơn Hàng
+                </a>
+                <hr class="my-4 border-slate-700">
+                <a href="/logout" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-red-700">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Đăng Xuất
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8">
+            <div class="max-w-4xl mx-auto">
+                
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-store text-blue-600 mr-3"></i>Trở Thành Người Bán Hàng
+                    </h1>
+                    <p class="text-gray-600 text-lg">Đăng ký để bán sản phẩm của bạn trên nền tảng</p>
+                </div>
+
+                <!-- Benefits Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition">
+                        <div class="text-4xl text-blue-600 mb-4">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 mb-2">Tiếp Cận Khách Hàng Toàn Cầu</h3>
+                        <p class="text-gray-600 text-sm">Bán sản phẩm của bạn cho hàng ngàn khách hàng tiềm năng</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition">
+                        <div class="text-4xl text-green-600 mb-4">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 mb-2">Theo Dõi Doanh Thu</h3>
+                        <p class="text-gray-600 text-sm">Xem báo cáo chi tiết về bán hàng và doanh thu hàng ngày</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition">
+                        <div class="text-4xl text-purple-600 mb-4">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 mb-2">Công Cụ Quản Lý</h3>
+                        <p class="text-gray-600 text-sm">Quản lý sản phẩm, đơn hàng và khách hàng dễ dàng</p>
+                    </div>
+                </div>
+
+                <!-- Registration Form -->
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Thông Tin Cửa Hàng</h2>
+                    
+                    <form action="/become-seller" method="POST" class="space-y-6">
+                        
+                        <!-- Row 1: Shop Name & Email -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-store mr-2 text-blue-600"></i>Tên Cửa Hàng
+                                </label>
+                                <input type="text" 
+                                       name="shop_name" 
+                                       required 
+                                       placeholder="VD: Cửa Hàng Điện Tử ABC"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-envelope mr-2 text-blue-600"></i>Email Cửa Hàng
+                                </label>
+                                <input type="email" 
+                                       name="shop_email" 
+                                       required 
+                                       placeholder="email@example.com"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Phone & Address -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-phone mr-2 text-blue-600"></i>Số Điện Thoại
+                                </label>
+                                <input type="tel" 
+                                       name="shop_phone" 
+                                       required 
+                                       placeholder="0987654321"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>Tỉnh/Thành Phố
+                                </label>
+                                <select name="province" required 
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                    <option value="">-- Chọn Tỉnh/Thành Phố --</option>
+                                    <option value="hn">Hà Nội</option>
+                                    <option value="hcm">TP. Hồ Chí Minh</option>
+                                    <option value="dn">Đà Nẵng</option>
+                                    <option value="other">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Full Address -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-address-card mr-2 text-blue-600"></i>Địa Chỉ Chi Tiết
+                            </label>
+                            <textarea name="shop_address" 
+                                      required 
+                                      rows="2"
+                                      placeholder="VD: 123 Đường Lê Lợi, Quận 1"
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+                        </div>
+
+                        <!-- Row 4: Business Type & Description -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-tag mr-2 text-blue-600"></i>Loại Hàng Kinh Doanh
+                                </label>
+                                <select name="business_type" required 
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                    <option value="">-- Chọn Loại Hàng --</option>
+                                    <option value="electronics">Điện Tử</option>
+                                    <option value="fashion">Thời Trang</option>
+                                    <option value="food">Thực Phẩm</option>
+                                    <option value="books">Sách</option>
+                                    <option value="other">Khác</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-users mr-2 text-blue-600"></i>Lĩnh Vực Kinh Doanh
+                                </label>
+                                <input type="text" 
+                                       name="business_field" 
+                                       required 
+                                       placeholder="VD: Bán Smartphone & Phụ Kiện"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Description -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-pen mr-2 text-blue-600"></i>Mô Tả Cửa Hàng
+                            </label>
+                            <textarea name="shop_description" 
+                                      rows="3"
+                                      placeholder="Viết mô tả về cửa hàng của bạn (tùy chọn)"
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+                        </div>
+
+                        <!-- Agreement -->
+                        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" 
+                                       name="agree_terms" 
+                                       id="agree" 
+                                       required
+                                       class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                <label for="agree" class="text-gray-700">
+                                    Tôi đồng ý với <a href="#" class="text-blue-600 font-semibold hover:underline">Điều Khoản Dịch Vụ</a> 
+                                    và <a href="#" class="text-blue-600 font-semibold hover:underline">Chính Sách Bảo Mật</a> của nền tảng
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex gap-4">
+                            <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition">
+                                <i class="fas fa-check-circle mr-2"></i> Đăng Ký Trở Thành Seller
+                            </button>
+                            <a href="/dashboard" class="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition text-center">
+                                <i class="fas fa-times-circle mr-2"></i> Hủy
+                            </a>
+                        </div>
+
+                        <!-- Info Message -->
+                        <div class="bg-green-50 border border-green-300 rounded-lg p-4">
+                            <p class="text-green-800 text-sm">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Lưu ý:</strong> Sau khi đăng ký, tài khoản của bạn sẽ được nâng cấp lên Seller. 
+                                Bạn sẽ có thể đăng sản phẩm và quản lý cửa hàng ngay lập tức.
+                            </p>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

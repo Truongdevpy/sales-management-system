@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Hệ Thống Quản Lý Bán Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Header/Navbar -->
+    <nav class="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-chart-line text-2xl text-blue-400"></i>
+                <h1 class="text-2xl font-bold">Sales Management</h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition">
+                    <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-sm">A</div>
+                    <span class="text-sm">Admin</span>
+                </div>
+                <a href="/logout" class="text-sm hover:text-red-400 transition">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-slate-800 text-white p-6">
+            <div class="mb-8">
+                <h2 class="text-lg font-bold text-blue-400 mb-2">Menu</h2>
+                <div class="h-1 w-12 bg-blue-400 rounded"></div>
+            </div>
+            
+            <nav class="space-y-3">
+                <a href="/dashboard" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700 bg-blue-600">
+                    <i class="fas fa-home mr-3"></i> Dashboard
+                </a>
+                <a href="/create" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-plus-circle mr-3"></i> Đăng Sản Phẩm
+                </a>
+                <a href="/list_item" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-box mr-3"></i> Sản Phẩm
+                </a>
+                <a href="#" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-shopping-cart mr-3"></i> Đơn Hàng
+                </a>
+                <a href="#" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-file-invoice mr-3"></i> Hóa Đơn
+                </a>
+                <a href="#" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-users mr-3"></i> Khách Hàng
+                </a>
+                <hr class="my-4 border-slate-700">
+                <a href="/logout" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-red-700">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Đăng Xuất
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                
+                <!-- Welcome Section -->
+                <div class="mb-8 flex justify-between items-start">
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Chào mừng trở lại! 👋</h1>
+                        <p class="text-gray-600">Đây là bảng điều khiển quản lý bán hàng của bạn</p>
+                    </div>
+                </div>
+
+                <!-- Seller Registration Banner -->
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-md p-8 mb-8 text-white">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">🚀 Muốn Trở Thành Người Bán Hàng?</h2>
+                            <p class="text-blue-100 max-w-2xl">
+                                Đăng ký trở thành người bán hàng ngay để bắt đầu kinh doanh trên nền tảng của chúng tôi. 
+                                Quản lý sản phẩm, đơn hàng và theo dõi doanh thu của bạn một cách dễ dàng.
+                                              1. User đăng ký → Mặc định là CUSTOMER
+                            2. Customer muốn bán hàng → Click "Trở thành Người Bán Hàng" 
+                               → Role thay đổi từ CUSTOMER → SELLER
+                            3. Admin quản lý mọi thứ          </p>
+                        </div>
+                        <a href="/become-seller" class="ml-6 bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-blue-50 transition shadow-lg whitespace-nowrap">
+                            Đăng Ký Ngay
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    
+                    <!-- Card 1: Tổng Sản Phẩm -->
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Tổng Sản Phẩm</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-2">24</p>
+                                <p class="text-green-600 text-sm mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i> +12% từ tuần trước
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg">
+                                <i class="fas fa-box text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Đơn Hàng Hôm Nay -->
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Đơn Hàng Hôm Nay</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-2">8</p>
+                                <p class="text-green-600 text-sm mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i> +5% từ hôm qua
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <i class="fas fa-shopping-cart text-2xl text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Doanh Thu Hôm Nay -->
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Doanh Thu Hôm Nay</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-2">5.2M</p>
+                                <p class="text-green-600 text-sm mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i> +22% từ tuần trước
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-lg">
+                                <i class="fas fa-money-bill-wave text-2xl text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Sản Phẩm Bán Chạy -->
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Sản Phẩm Bán Chạy</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-2">12</p>
+                                <p class="text-orange-600 text-sm mt-1">
+                                    <i class="fas fa-fire mr-1"></i> Đang xu hướng
+                                </p>
+                            </div>
+                            <div class="bg-orange-100 p-3 rounded-lg">
+                                <i class="fas fa-star text-2xl text-orange-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Main Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    
+                    <!-- Chart 1: Doanh Thu Theo Tháng -->
+                    <div class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Doanh Thu Theo Tháng</h2>
+                        <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-chart-bar text-4xl text-gray-300 mb-2"></i>
+                                <p class="text-gray-400">Biểu đồ doanh thu sẽ hiển thị ở đây</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Top 5 Sản Phẩm -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Top 5 Sản Phẩm</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                                    <span class="text-sm text-gray-700">iPhone 15 Pro</span>
+                                </div>
+                                <span class="text-sm font-bold text-blue-600">180</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                                    <span class="text-sm text-gray-700">Samsung S24</span>
+                                </div>
+                                <span class="text-sm font-bold text-blue-600">156</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                                    <span class="text-sm text-gray-700">iPad Pro</span>
+                                </div>
+                                <span class="text-sm font-bold text-blue-600">142</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">4</span>
+                                    <span class="text-sm text-gray-700">MacBook Air</span>
+                                </div>
+                                <span class="text-sm font-bold text-blue-600">128</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">5</span>
+                                    <span class="text-sm text-gray-700">Apple Watch</span>
+                                </div>
+                                <span class="text-sm font-bold text-blue-600">95</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Recent Orders Section -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-gray-800">Đơn Hàng Gần Đây</h2>
+                        <a href="#" class="text-blue-600 text-sm font-medium hover:underline">Xem tất cả →</a>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Đơn</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách Hàng</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản Phẩm</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng Thái</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#DH001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Nguyễn Văn A</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">iPhone 15 Pro</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">25.000.000đ</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Đã giao
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">03/04/2026</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#DH002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Trần Thị B</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Samsung S24</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">22.000.000đ</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            Đang giao
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">02/04/2026</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#DH003</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Lê Văn C</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">iPad Pro</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">18.000.000đ</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Chờ xác nhận
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">01/04/2026</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#DH004</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Phạm Thị D</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">MacBook Air</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">35.000.000đ</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            Đã hủy
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">31/03/2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

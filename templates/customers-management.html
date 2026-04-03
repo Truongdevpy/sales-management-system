@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Khách Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Header/Navbar -->
+    <nav class="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-chart-line text-2xl text-blue-400"></i>
+                <h1 class="text-2xl font-bold">Sales Management</h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition">
+                    <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-sm">A</div>
+                    <span class="text-sm">Shop ABC</span>
+                </div>
+                <a href="/logout" class="text-sm hover:text-red-400 transition">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-slate-800 text-white p-6">
+            <div class="mb-8">
+                <h2 class="text-lg font-bold text-blue-400 mb-2">Menu</h2>
+                <div class="h-1 w-12 bg-blue-400 rounded"></div>
+            </div>
+            
+            <nav class="space-y-3">
+                <a href="/dashboard" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-home mr-3"></i> Dashboard
+                </a>
+                <a href="/products-management" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-box mr-3"></i> Sản Phẩm
+                </a>
+                <a href="/customers-management" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700 bg-blue-600">
+                    <i class="fas fa-users mr-3"></i> Khách Hàng
+                </a>
+                <a href="/orders-management" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-shopping-cart mr-3"></i> Đơn Hàng
+                </a>
+                <a href="/reports" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700">
+                    <i class="fas fa-file-chart-line mr-3"></i> Báo Cáo
+                </a>
+                <hr class="my-4 border-slate-700">
+                <a href="/logout" class="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-red-700">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Đăng Xuất
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                
+                <!-- Header Section -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-users text-blue-600 mr-3"></i>Quản Lý Khách Hàng
+                        </h1>
+                        <p class="text-gray-600">Tổng cộng: <span class="font-bold text-blue-600">156</span> khách hàng</p>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Khách Hàng Mới (Tuần)</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">23</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg">
+                                <i class="fas fa-user-plus text-xl text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Khách Hàng Thường Xuyên</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">42</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <i class="fas fa-star text-xl text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Tổng Lượt Mua</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">487</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-lg">
+                                <i class="fas fa-shopping-bag text-xl text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Giá Trị Trung Bình</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">5.2M</p>
+                            </div>
+                            <div class="bg-orange-100 p-3 rounded-lg">
+                                <i class="fas fa-money-bill-wave text-xl text-orange-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Section -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tìm kiếm khách hàng</label>
+                            <input type="text" 
+                                   placeholder="Tên hoặc email..."
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Loại Khách Hàng</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">-- Tất cả --</option>
+                                <option value="regular">Thường xuyên</option>
+                                <option value="new">Mới</option>
+                                <option value="inactive">Không hoạt động</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Sắp Xếp Theo</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Mới nhất</option>
+                                <option value="name">Tên A-Z</option>
+                                <option value="purchase">Lượt mua cao nhất</option>
+                                <option value="value">Giá trị cao nhất</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-search mr-2"></i> Tìm Kiếm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customers Table -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Khách Hàng</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Email</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Số Điện Thoại</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Lượt Mua</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Giá Trị</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Loại</th>
+                                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">N</div>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">Nguyễn Văn A</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">nguyenvana@email.com</td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">0987654321</td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-gray-800">15</td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-blue-600">75.500.000đ</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                                            Thường xuyên
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-sm font-medium">
+                                        <a href="#" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900 font-semibold">
+                                            <i class="fas fa-eye"></i> Xem
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-10 w-10 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold">T</div>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">Trần Thị B</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">tranthib@email.com</td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">0912345678</td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-gray-800">8</td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-blue-600">42.200.000đ</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">
+                                            Mới
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-sm font-medium">
+                                        <a href="#" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900 font-semibold">
+                                            <i class="fas fa-eye"></i> Xem
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                        <p class="text-sm text-gray-600">
+                            Hiển thị <strong>1</strong> đến <strong>5</strong> của <strong>156</strong> khách hàng
+                        </p>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">← Trước</button>
+                            <button class="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
+                            <button class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">2</button>
+                            <button class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Sau →</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>
