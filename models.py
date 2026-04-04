@@ -1,13 +1,12 @@
 class User:
     def __init__(self, data_dict):
-        # Biến Dictionary từ Database thành các thuộc tính của đối tượng
         self.id = data_dict.get('id')
         self.full_name = data_dict.get('full_name')
         self.username = data_dict.get('username')
         self.password = data_dict.get('password')
         self.role = data_dict.get('role', 'customer')
 
-    # Kiểm tra xem User này có quyền đăng hàng không
+    # Kiểm tra xem User này có quyền bán hàng không
     def can_sell(self):
         return self.role in ['seller', 'admin']
 
