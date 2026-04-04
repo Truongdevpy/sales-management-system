@@ -1,10 +1,13 @@
 from curses import flash
+import io
 import os
-from flask import Flask, render_template, request, redirect, session, url_for, flash
+from flask import Flask, render_template, request, redirect, send_file, session, url_for, flash
+import pandas as pd
 import config 
 from werkzeug.utils import secure_filename
 from models import User, Product 
 import pymysql
+from fpdf import FPDF
 
 app = Flask(__name__)
 app.secret_key = 'tuan'
@@ -168,5 +171,61 @@ def update_product():
             db.close()
             
     return redirect(url_for('create')) 
+
+@app.route('/export/excel_products')
+def export_excel_products():
+    db = get_db_connection()
+    with db.cursor() as cursor:
+        data = Product.get_for_report(cursor)
+    db.close()
+
+    df = pd.DataFrame(data)
+    # Đổi tên cột cho đẹp trong file Excel
+    df.columns = ['ID', 'Tên sản phẩm', 'Giá bán', 'Số lượng tồn']
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='TonKho')
+    output.seek(0)
+
+    return send_file(output, 
+                     download_name="Danh_sach_ton_kho.xlsx", 
+                     as_attachment=True)
+
+@app.route('/export/pdf_products')
+def export_pdf_products():
+    db = get_db_connection()
+    with db.cursor() as cursor:
+        data = Product.get_for_report(cursor)
+    db.close()
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="DANH SACH SAN PHAM TON KHO", ln=True, align='C')
+    pdf.ln(10)
+
+    # Tiêu đề bảng
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(20, 10, "ID", 1)
+    pdf.cell(80, 10, "Ten San Pham", 1)
+    pdf.cell(40, 10, "Gia Ban", 1)
+    pdf.cell(40, 10, "Ton Kho", 1, ln=True)
+
+    # Nội dung bảng
+    pdf.set_font("Arial", size=12)
+    for p in data:
+        pdf.cell(20, 10, str(p['id']), 1)
+        pdf.cell(80, 10, str(p['name']), 1)
+        pdf.cell(40, 10, "{:,.0f}".format(p['price']), 1)
+        pdf.cell(40, 10, str(p['quantity']), 1, ln=True)
+
+    output = io.BytesIO()
+    pdf_out = pdf.output(dest='S').encode('latin1')
+    output.write(pdf_out)
+    output.seek(0)
+
+    return send_file(output, download_name="Bao_cao_ton_kho.pdf", as_attachment=True)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

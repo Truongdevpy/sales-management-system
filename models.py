@@ -74,3 +74,10 @@ class Product:
                  VALUES (%s, %s, %s, %s, %s, %s)"""
         cursor.execute(sql, (user_id, name, desc, price, img, qty))
         db.commit()
+
+    @staticmethod
+    def get_for_report(cursor):
+        """Lấy thông tin tồn kho cơ bản"""
+        sql = "SELECT id, name, price, quantity FROM products ORDER BY id DESC"
+        cursor.execute(sql)
+        return cursor.fetchall()
