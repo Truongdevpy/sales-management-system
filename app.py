@@ -1,11 +1,12 @@
+from curses import flash
 import os
-from flask import Flask, render_template, request, redirect, session, url_for
-import pymysql
+from flask import Flask, render_template, request, redirect, session, url_for, flash
 import config 
 from werkzeug.utils import secure_filename
+from models import User, Product 
+import pymysql
 
 app = Flask(__name__)
-
 app.secret_key = 'tuan'
 
 UPLOAD_FOLDER = 'static/uploads'
@@ -16,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def get_db_connection():
     try:
-        connection = pymysql.connect(
+        return pymysql.connect(
             host=config.DB_HOST,
             user=config.DB_USER,
             password=config.DB_PASSWORD,
@@ -24,26 +25,25 @@ def get_db_connection():
             charset=config.DB_CHARSET,
             cursorclass=pymysql.cursors.DictCursor
         )
-        return connection
     except Exception as e:
         print(f"Lỗi kết nối Database: {e}")
         return None
 
+# --- AUTH ROUTES ---
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        full_name = request.form.get('full_name')
-        username = request.form.get('username')
-        password = request.form.get('password')
-        role = 'customer' 
-
         db = get_db_connection()
         if db:
             try:
                 with db.cursor() as cursor:
-                    sql = "INSERT INTO users (full_name, username, password, role) VALUES (%s, %s, %s, %s)"
-                    cursor.execute(sql, (full_name, username, password, role))
-                    db.commit()
+                    User.create(
+                        cursor, db,
+                        full_name=request.form.get('full_name'),
+                        username=request.form.get('username'),
+                        password=request.form.get('password')
+                    )
                 return redirect(url_for('login'))
             except Exception as e:
                 return f"<h1>Lỗi: {e}</h1>"
@@ -54,122 +54,83 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
         db = get_db_connection()
         if db:
-            try:
-                with db.cursor() as cursor:
-                    sql = "SELECT * FROM users WHERE username = %s AND password = %s"
-                    cursor.execute(sql, (username, password))
-                    user = cursor.fetchone()
-                    
-                    if user:
-                        session['user_id'] = user['id']
-                        session['username'] = user['username']
-                        session['role'] = user['role']
-                        
-                        return redirect(url_for('create'))
-                    else:
-                        return "<h1>Sai tài khoản hoặc mật khẩu! ❌</h1>"
-            finally:
-                db.close()
+            with db.cursor() as cursor:
+                user = User.find_by_auth(cursor, request.form.get('username'), request.form.get('password'))
+                if user:
+                    session['user_id'] = user.id
+                    session['username'] = user.username
+                    session['role'] = user.role
+                    return redirect(url_for('create'))
+                flash('Sai tài khoản hoặc mật khẩu! ❌', 'danger') 
+                
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.clear() 
+    session.clear()
     return redirect(url_for('login'))
+
+# --- PRODUCT ROUTES ---
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    if session.get('role') not in ['seller', 'admin']:
+    current_user = User(session) 
+    if not current_user.can_sell():
         return "<h1>Bạn không có quyền đăng sản phẩm! ❌</h1>", 403
 
     db = get_db_connection()
-    cursor = db.cursor()
-
     if request.method == 'POST':
-        ten_san_pham = request.form.get('ten_san_pham')
-        gia_ban = request.form.get('gia_ban')
-        mo_ta = request.form.get('mo_ta')
         file_anh = request.files.get('anh_san_pham')
-        so_luong = request.form.get('so_luong') or 0
-
         filename = ""
         if file_anh and file_anh.filename != '':
             filename = secure_filename(file_anh.filename)
             file_anh.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        try:
-            sql = """INSERT INTO products (user_id, name, description, price, image_url, quantity) 
-                     VALUES (%s, %s, %s, %s, %s, %s)"""
-            cursor.execute(sql, (session['user_id'], ten_san_pham, mo_ta, gia_ban, filename, so_luong))
-            db.commit()
-            return redirect(url_for('list_item')) 
-        except Exception as e:
-            return f"<h1>Lỗi SQL: {e}</h1>"
-        finally:
-            db.close()
+        with db.cursor() as cursor:
+            Product.add(
+                cursor, db,
+                user_id=session['user_id'],
+                name=request.form.get('ten_san_pham'),
+                desc=request.form.get('mo_ta'),
+                price=float(request.form.get('gia_ban', 0)),
+                img=filename,
+                qty=int(request.form.get('so_luong', 0))
+            )
+        db.close()
+        return redirect(url_for('list_item'))
 
-
-    db = get_db_connection()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM products ORDER BY id DESC")
-    all_products = cursor.fetchall()
+    with db.cursor() as cursor:
+        all_products = Product.get_all(cursor)
     db.close()
-    
     return render_template('create.html', products=all_products)
 
 @app.route('/list_item')
 def list_item():
     db = get_db_connection()
-    products = []
-    if db:
-        try:
-            with db.cursor() as cursor:
-                sql = "SELECT * FROM products ORDER BY id DESC"
-                cursor.execute(sql)
-                products = cursor.fetchall()
-        except Exception as e:
-            print(f"Lỗi lấy dữ liệu: {e}")
-        finally:
-            db.close()
-    
+    with db.cursor() as cursor:
+        products = Product.get_all(cursor)
+    db.close()
     return render_template('list_item.html', products=products)
 
 @app.route('/delete/<int:product_id>')
 def delete_product(product_id):
     db = get_db_connection()
-    if db:
-        try:
-            with db.cursor() as cursor:
-                sql = "DELETE FROM products WHERE id = %s"
-                cursor.execute(sql, (product_id,))
-                db.commit()
-        except Exception as e:
-            return f"<h1>Lỗi SQL: {e}</h1>"
-        finally:
-            db.close()
-    
+    with db.cursor() as cursor:
+        Product.delete(cursor, db, product_id)
+    db.close()
     return redirect(url_for('list_item'))
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     db = get_db_connection()
-    product = None
-    if db:
-        try:
-            with db.cursor() as cursor:
-                sql = "SELECT * FROM products WHERE id = %s"
-                cursor.execute(sql, (product_id,))
-                product = cursor.fetchone()
-        finally:
-            db.close()
+    with db.cursor() as cursor:
+        product = Product.find_by_id(cursor, product_id)
+    db.close()
 
     if product:
         return render_template('product_detail.html', product=product)
@@ -178,26 +139,10 @@ def product_detail(product_id):
 @app.route('/search')
 def search():
     keyword = request.args.get('query', '').strip()
-    
     db = get_db_connection()
-    products = []
-    
-    if db:
-        try:
-            with db.cursor() as cursor:
-                if keyword:
-                    sql = """SELECT * FROM products 
-                             WHERE name LIKE %s OR description LIKE %s 
-                             ORDER BY id DESC"""
-                    search_term = f"%{keyword}%"
-                    cursor.execute(sql, (search_term, search_term))
-                else:
-                    cursor.execute("SELECT * FROM products ORDER BY id DESC")
-                
-                products = cursor.fetchall()
-        finally:
-            db.close()
-            
+    with db.cursor() as cursor:
+        products = Product.search(cursor, keyword)
+    db.close()
     return render_template('list_item.html', products=products, query=keyword)
 
 if __name__ == '__main__':
