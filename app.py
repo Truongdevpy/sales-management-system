@@ -145,5 +145,28 @@ def search():
     db.close()
     return render_template('list_item.html', products=products, query=keyword)
 
+
+@app.route('/update_product', methods=['POST'])
+def update_product():
+    product_id = request.form.get('product_id')
+    name = request.form.get('name')
+    price = request.form.get('price')
+    quantity = request.form.get('quantity')
+
+    db = get_db_connection()
+    if db:
+        try:
+            with db.cursor() as cursor:
+                # Gọi hàm update trong Model (Bảo nên viết hàm này vào models.py nhé)
+                sql = "UPDATE products SET name=%s, price=%s, quantity=%s WHERE id=%s"
+                cursor.execute(sql, (name, price, quantity, product_id))
+                db.commit()
+            flash("Cập nhật sản phẩm thành công! ✅")
+        except Exception as e:
+            flash(f"Lỗi khi cập nhật: {e}")
+        finally:
+            db.close()
+            
+    return redirect(url_for('create')) 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
