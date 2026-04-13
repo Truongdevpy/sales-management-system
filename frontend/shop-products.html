@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Products - Seller Area</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title flex justify-between items-center" style="margin-bottom: 24px;">
+                    <h1>My Products</h1>
+                    <a href="seller.html" class="btn btn-primary"><i class='bx bx-plus'></i> Add New</a>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-4 mb-4 gap-4">
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Total Products</p>
+                        <h3 style="font-size: 24px;" id="totalCount">0</h3>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Active Listing</p>
+                        <h3 style="font-size: 24px; color: var(--success);" id="activeCount">0</h3>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Out of Stock</p>
+                        <h3 style="font-size: 24px; color: var(--danger);" id="oosCount">0</h3>
+                    </div>
+                </div>
+
+                <!-- Filters & Table -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <select class="form-control" style="width: 200px;" onchange="renderMyProducts(this.value)">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                        
+                        <div class="header-search" style="border: 1px solid var(--border); background: transparent;">
+                            <i class='bx bx-search'></i>
+                            <input type="text" placeholder="Search products...">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="80">Image</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myProductsBody">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = requireAuth(['seller']);
+        
+        if (user) {
+            renderSidebarMenu(user.role, 'shop-products');
+            renderHeader(user);
+            renderMyProducts();
+            updateStats();
+        }
+
+        function updateStats() {
+            const products = DB.products.filter(p => p.sellerId === user.id);
+            document.getElementById('totalCount').innerText = products.length;
+            document.getElementById('activeCount').innerText = products.filter(p => p.status === 'active').length;
+            document.getElementById('oosCount').innerText = products.filter(p => p.status === 'out_of_stock').length;
+        }
+
+        function renderMyProducts(filterStatus = 'all') {
+            const tbody = document.getElementById('myProductsBody');
+            let html = '';
+            
+            let products = DB.products.filter(p => p.sellerId === user.id);
+            if(filterStatus !== 'all') {
+                products = products.filter(p => p.status === filterStatus);
+            }
+            
+            if(products.length === 0) {
+                html = `<tr><td colspan="7" class="text-center" style="padding: 30px;">No products found</td></tr>`;
+            } else {
+                products.forEach(p => {
+                    let badgeClass = p.status === 'active' ? 'badge-active' : 'badge-danger';
+                    let statusText = p.status === 'active' ? 'ACTIVE' : 'OUT OF STOCK';
+
+                    html += `
+                        <tr>
+                            <td><img src="${p.image}" alt="" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius);"></td>
+                            <td><strong>${p.name}</strong></td>
+                            <td>${p.category}</td>
+                            <td style="color: var(--primary); font-weight: 600;">${formatMoney(p.price)}</td>
+                            <td>${p.stock}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-outline" style="padding: 5px 10px;"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="btn btn-danger" style="padding: 5px 10px;"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

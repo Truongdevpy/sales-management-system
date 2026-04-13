@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Sellers Management</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Admin Management</h1>
+                </div>
+
+                <!-- Tabs -->
+                <div class="card mb-4" style="padding: 0;">
+                    <div class="flex" style="border-bottom: 1px solid var(--border);">
+                        <button class="btn" style="border-radius: 0; background: transparent; color: var(--primary); border-bottom: 2px solid var(--primary); padding: 15px 20px;" onclick="switchTab('requests')">Seller Requests</button>
+                        <button class="btn" style="border-radius: 0; background: transparent; color: var(--text); padding: 15px 20px;" onclick="switchTab('stats')">Shops Statistics</button>
+                    </div>
+                </div>
+
+                <!-- Tab: Seller Requests -->
+                <div id="tab-requests" class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 style="font-size: 18px; color: var(--dark);">Pending Review</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Shop Name</th>
+                                    <th>Owner</th>
+                                    <th>Email</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sellerRequestsBody">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Shop Stats -->
+                <div id="tab-stats" class="card hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 style="font-size: 18px; color: var(--dark);">Active Shops</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Shop ID</th>
+                                    <th>Shop Name</th>
+                                    <th>Joined</th>
+                                    <th>Total Products</th>
+                                    <th>Total Sales</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shopStatsBody">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for viewing seller -->
+    <div class="modal-overlay" id="sellerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Seller Registration Info</h3>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Info rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = requireAuth(['admin']);
+        
+        if (user) {
+            renderSidebarMenu(user.role, 'admin');
+            renderHeader(user);
+            renderSellerRequests();
+            renderShopStats();
+        }
+
+        function switchTab(tab) {
+            const btns = document.querySelectorAll('.card .flex.btn');
+            // Simplified tab switching for demo
+            if(tab === 'requests') {
+                document.getElementById('tab-requests').classList.remove('hidden');
+                document.getElementById('tab-stats').classList.add('hidden');
+            } else {
+                document.getElementById('tab-requests').classList.add('hidden');
+                document.getElementById('tab-stats').classList.remove('hidden');
+            }
+        }
+
+        function renderSellerRequests() {
+            const tbody = document.getElementById('sellerRequestsBody');
+            let html = '';
+            
+            if(DB.sellerRequests.length === 0) {
+                html = `<tr><td colspan="7" class="text-center" style="padding: 30px;">No pending requests</td></tr>`;
+            } else {
+                DB.sellerRequests.forEach(req => {
+                    let badgeClass = 'badge-pending';
+                    if (req.status === 'approved') badgeClass = 'badge-approved';
+                    if (req.status === 'rejected') badgeClass = 'badge-rejected';
+
+                    html += `
+                        <tr>
+                            <td>#${req.id}</td>
+                            <td><strong>${req.shopName}</strong></td>
+                            <td>${req.ownerName}</td>
+                            <td>${req.email}</td>
+                            <td>${req.date}</td>
+                            <td><span class="badge ${badgeClass}">${req.status.toUpperCase()}</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-outline" style="padding: 5px 10px;" onclick="viewSeller(${req.id})"><i class='bx bx-show'></i></button>
+                                    ${req.status === 'pending' ? `
+                                        <button class="btn btn-success" style="padding: 5px 10px;" onclick="alert('Demo: Approving ID ${req.id}')"><i class='bx bx-check'></i></button>
+                                        <button class="btn btn-danger" style="padding: 5px 10px;" onclick="alert('Demo: Rejecting ID ${req.id}')"><i class='bx bx-x'></i></button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+
+        function renderShopStats() {
+            const tbody = document.getElementById('shopStatsBody');
+            let html = '';
+            
+            DB.sellers.forEach(shop => {
+                html += `
+                    <tr>
+                        <td>#${shop.id}</td>
+                        <td><strong>${shop.shopName}</strong></td>
+                        <td>${shop.joinedAt}</td>
+                        <td>${shop.totalProducts} items</td>
+                        <td style="color: var(--success); font-weight: 600;">${formatMoney(shop.totalSales)}</td>
+                        <td><span class="badge badge-active">${shop.status.toUpperCase()}</span></td>
+                        <td>
+                            <button class="btn btn-outline" style="padding: 5px 10px;"><i class='bx bx-line-chart'></i> Stats</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function viewSeller(id) {
+            const req = DB.sellerRequests.find(r => r.id === id);
+            if(!req) return;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <p class="text-light" style="font-size: 13px;">Shop Name</p>
+                        <p style="font-weight: 500;">${req.shopName}</p>
+                    </div>
+                    <div>
+                        <p class="text-light" style="font-size: 13px;">Owner Name</p>
+                        <p style="font-weight: 500;">${req.ownerName}</p>
+                    </div>
+                    <div>
+                        <p class="text-light" style="font-size: 13px;">Email Address</p>
+                        <p style="font-weight: 500;">${req.email}</p>
+                    </div>
+                    <div>
+                        <p class="text-light" style="font-size: 13px;">Applied Date</p>
+                        <p style="font-weight: 500;">${req.date}</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 justify-between mt-4 border-t pt-4" style="border-top: 1px solid var(--border); padding-top: 15px;">
+                    <button class="btn btn-danger" onclick="closeModal()">Reject Request</button>
+                    <button class="btn btn-success" onclick="closeModal()">Approve Seller</button>
+                </div>
+            `;
+            document.getElementById('sellerModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('sellerModal').classList.remove('active');
+        }
+
+    </script>
+</body>
+</html>

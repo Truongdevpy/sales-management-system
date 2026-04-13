@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sales Management System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>Welcome Back</h2>
+                <p>Login to your account</p>
+            </div>
+            
+            <div class="auth-body">
+                <form id="loginForm" onsubmit="event.preventDefault(); alert('Use quick login for demo');">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" placeholder="Enter your email" value="demo@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" placeholder="Enter your password" value="123456">
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="flex items-center gap-2" style="font-size: 14px; color: var(--text-light);">
+                            <input type="checkbox"> Remember me
+                        </label>
+                        <a href="#" style="font-size: 14px;">Forgot Password?</a>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width: 100%;" onclick="alert('Please use the quick demo login roles below.')">Login</button>
+                    
+                    <p class="text-center mt-4" style="font-size: 14px; color: var(--text-light);">
+                        Don't have an account? <a href="#">Register here</a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Demo Role Fast Login -->
+            <div class="demo-roles">
+                <h4>Demo Login (Quick Access)</h4>
+                <div class="grid grid-cols-3">
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('admin')">
+                        <i class='bx bx-crown'></i> Admin
+                    </button>
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('seller')">
+                        <i class='bx bx-store'></i> Seller
+                    </button>
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('customer')">
+                        <i class='bx bx-user'></i> Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // If already logged in, redirect to dashboard
+        if(getCurrentUser()) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

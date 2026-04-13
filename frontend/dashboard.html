@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sales System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout" id="appLayout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu">
+                <!-- Rendered by JS -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header" id="topHeader">
+                <!-- Rendered by JS -->
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div class="page-title">
+                    <h1 id="welcomeText">Dashboard</h1>
+                    <div id="roleBadge"></div>
+                </div>
+
+                <!-- Dynamic Dashboard Content -->
+                <div id="dashboardContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check Auth
+        const user = requireAuth();
+
+        if (user) {
+            // Render Layout Base
+            renderSidebarMenu(user.role, 'dashboard');
+            renderHeader(user);
+
+            // Populate Welcome
+            document.getElementById('welcomeText').innerText = `Welcome back, ${user.name}!`;
+            document.getElementById('roleBadge').innerHTML = `
+                <span class="badge ${getRoleBadgeClass(user.role)}">
+                    ${user.role.toUpperCase()}
+                </span>
+            `;
+
+            renderDashboardMetrics(user);
+        }
+
+        function getRoleBadgeClass(role) {
+            if (role === 'admin') return 'badge-active';
+            if (role === 'seller') return 'badge-warning';
+            return 'badge-success';
+        }
+
+        function renderDashboardMetrics(user) {
+            const container = document.getElementById('dashboardContent');
+            let html = '';
+
+            if (user.role === 'admin') {
+                html = `
+                    <div class="grid grid-cols-4 mb-4">
+                        <div class="card stat-card">
+                            <div class="stat-icon primary"><i class='bx bx-user-pin'></i></div>
+                            <div class="stat-details">
+                                <h3>124</h3>
+                                <p>Total Sellers</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon warning"><i class='bx bx-time'></i></div>
+                            <div class="stat-details">
+                                <h3>${DB.sellerRequests.filter(r => r.status === 'pending').length}</h3>
+                                <p>Pending Sellers</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon info"><i class='bx bx-shopping-bag'></i></div>
+                            <div class="stat-details">
+                                <h3>1,540</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon success"><i class='bx bx-dollar-circle'></i></div>
+                            <div class="stat-details">
+                                <h3>$124,500</h3>
+                                <p>Platform Revenue</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-4">
+                        <a href="admin.html" class="btn btn-primary"><i class='bx bx-check-shield'></i> Review Sellers</a>
+                        <a href="admin.html" class="btn btn-outline"><i class='bx bx-line-chart'></i> View Shop Stats</a>
+                    </div>
+                `;
+            } else if (user.role === 'seller') {
+                html = `
+                    <div class="grid grid-cols-4 mb-4">
+                        <div class="card stat-card">
+                            <div class="stat-icon primary"><i class='bx bx-package'></i></div>
+                            <div class="stat-details">
+                                <h3>${DB.products.filter(p => p.sellerId === user.id).length}</h3>
+                                <p>My Products</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon info"><i class='bx bx-cart-download'></i></div>
+                            <div class="stat-details">
+                                <h3>45</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon success"><i class='bx bx-wallet'></i></div>
+                            <div class="stat-details">
+                                <h3>$8,500</h3>
+                                <p>Revenue</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon success"><i class='bx bx-check-circle'></i></div>
+                            <div class="stat-details">
+                                <h3 style="font-size: 20px; margin-top:5px;">Approved</h3>
+                                <p>Shop Status</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-4">
+                        <a href="seller.html" class="btn btn-primary"><i class='bx bx-plus'></i> Post Product</a>
+                        <a href="shop-products.html" class="btn btn-outline"><i class='bx bx-list-ul'></i> My Product List</a>
+                    </div>
+                `;
+            } else if (user.role === 'customer') {
+                const pendingOrders = DB.orders.filter(o => o.customerId === user.id && o.paymentStatus === 'pending').length;
+                const paidOrders = DB.orders.filter(o => o.customerId === user.id && o.paymentStatus === 'paid').length;
+
+                html = `
+                    <div class="grid grid-cols-4 mb-4">
+                        <div class="card stat-card">
+                            <div class="stat-icon primary"><i class='bx bx-shopping-bag'></i></div>
+                            <div class="stat-details">
+                                <h3>${DB.orders.filter(o => o.customerId === user.id).length}</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon warning"><i class='bx bx-credit-card-front'></i></div>
+                            <div class="stat-details">
+                                <h3>${pendingOrders}</h3>
+                                <p>Pending Pay</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon info"><i class='bx bx-truck'></i></div>
+                            <div class="stat-details">
+                                <h3>1</h3>
+                                <p>In Transit</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon success"><i class='bx bx-dollar'></i></div>
+                            <div class="stat-details">
+                                <h3>$399.97</h3>
+                                <p>Total Spent</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-4">
+                        <a href="checkout.html" class="btn btn-primary"><i class='bx bx-cart'></i> Shop Now</a>
+                        <a href="track-order.html" class="btn btn-outline"><i class='bx bx-search-alt'></i> Track Orders</a>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Shopping</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Shop & Checkout</h1>
+                </div>
+
+                <div class="grid grid-cols-3 gap-20" style="gap: 24px;">
+                    <!-- Shop Area -->
+                    <div style="grid-column: span 2;">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 style="font-size: 18px;">All Products</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4" id="productList">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Cart Sidebar -->
+                    <div>
+                        <div class="card" style="position: sticky; top: 90px;">
+                            <h3 style="margin-bottom: 20px; font-size: 18px; display: flex; justify-content: space-between;">
+                                <span>Your Cart</span>
+                                <span class="badge badge-active" id="cartCount">0</span>
+                            </h3>
+
+                            <div id="cartItems" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+                                <!-- Cart Items -->
+                                <p class="text-center text-light mt-4" style="font-size: 14px;">Cart is empty</p>
+                            </div>
+
+                            <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 20px;">
+                                <div class="flex justify-between mb-2">
+                                    <span style="color: var(--text-light);">Subtotal</span>
+                                    <span style="font-weight: 500;" id="cartSubtotal">$0.00</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span style="color: var(--text-light);">Shipping</span>
+                                    <span style="font-weight: 500;">$5.00</span>
+                                </div>
+                                <div class="flex justify-between mt-3 pt-3" style="border-top: 1px dashed var(--border);">
+                                    <span style="font-weight: 600; font-size: 18px;">Total</span>
+                                    <span style="font-weight: 700; font-size: 18px; color: var(--primary);" id="cartTotal">$0.00</span>
+                                </div>
+                            </div>
+
+                            <h4 style="margin-bottom: 12px; font-size: 14px;">Shipping Details</h4>
+                            <div class="form-group mb-2">
+                                <input type="text" class="form-control" placeholder="Full Name" value="Mary Customer">
+                            </div>
+                            <div class="form-group mb-2">
+                                <input type="text" class="form-control" placeholder="Phone Number">
+                            </div>
+                            <div class="form-group mb-4">
+                                <textarea class="form-control" rows="2" placeholder="Delivery Address..."></textarea>
+                            </div>
+
+                            <button class="btn btn-primary" style="width: 100%;" onclick="processCheckout()" id="checkoutBtn" disabled>
+                                <i class='bx bx-credit-card-front'></i> Proceed to Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = requireAuth(['customer']);
+        
+        let cart = [];
+
+        if (user) {
+            renderSidebarMenu(user.role, 'checkout');
+            renderHeader(user);
+            renderShopProducts();
+        }
+
+        function renderShopProducts() {
+            const list = document.getElementById('productList');
+            let html = '';
+            
+            DB.products.forEach(p => {
+                const isOos = p.status === 'out_of_stock';
+                html += `
+                    <div class="product-card">
+                        <img src="${p.image}" alt="" class="product-img">
+                        <div class="product-info">
+                            <div class="product-title">${p.name}</div>
+                            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 10px;">${p.category}</p>
+                            <div class="flex justify-between items-center">
+                                <div class="product-price" style="margin: 0;">${formatMoney(p.price)}</div>
+                                <button class="btn btn-primary" style="padding: 6px 12px;" ${isOos ? 'disabled' : ''} onclick="addToCart(${p.id})">
+                                    <i class='bx bx-plus'></i> Add
+                                </button>
+                            </div>
+                            ${isOos ? '<p style="color: var(--danger); font-size: 12px; margin-top: 5px;">Out of stock</p>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        function addToCart(prodId) {
+            const product = DB.products.find(p => p.id === prodId);
+            if(!product) return;
+
+            const existing = cart.find(c => c.productId === prodId);
+            if(existing) {
+                existing.quantity++;
+            } else {
+                cart.push({
+                    productId: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    quantity: 1
+                });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const countBtn = document.getElementById('cartCount');
+            const btn = document.getElementById('checkoutBtn');
+            
+            if(cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-light mt-4" style="font-size: 14px;">Cart is empty</p>';
+                countBtn.innerText = '0';
+                btn.disabled = true;
+                document.getElementById('cartSubtotal').innerText = '$0.00';
+                document.getElementById('cartTotal').innerText = '$0.00';
+                return;
+            }
+
+            btn.disabled = false;
+            let html = '';
+            let subtotal = 0;
+
+            cart.forEach((item, index) => {
+                subtotal += item.price * item.quantity;
+                html += `
+                    <div class="cart-item">
+                        <img src="${item.image}" alt="" class="cart-item-img" style="width: 50px; height: 50px;">
+                        <div class="cart-item-info">
+                            <h4 style="font-size: 13px; margin-bottom: 4px;">${item.name}</h4>
+                            <div class="flex justify-between items-center">
+                                <span style="font-size: 13px; font-weight: 600; color: var(--primary);">${formatMoney(item.price)}</span>
+                                <div class="qty-control" style="transform: scale(0.8); transform-origin: right center;">
+                                    <button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>
+                                    <input type="text" class="qty-input" value="${item.quantity}" readonly>
+                                    <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            countBtn.innerText = cart.length;
+            
+            document.getElementById('cartSubtotal').innerText = formatMoney(subtotal);
+            document.getElementById('cartTotal').innerText = formatMoney(subtotal + 5); // adding $5 shipping
+        }
+
+        function updateQty(index, change) {
+            if(cart[index].quantity + change > 0) {
+                cart[index].quantity += change;
+            } else {
+                cart.splice(index, 1);
+            }
+            renderCart();
+        }
+
+        function processCheckout() {
+            alert('Mock Checkout Successful! Order will reflect in Track Orders.');
+            cart = [];
+            renderCart();
+            window.location.href = 'track-order.html';
+        }
+    </script>
+</body>
+</html>

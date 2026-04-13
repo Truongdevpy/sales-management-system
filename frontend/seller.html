@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Product - Seller Area</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Add New Product</h1>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Form -->
+                    <div class="card" style="grid-column: span 2;">
+                        <h3 style="margin-bottom: 20px; font-size: 18px;">Product Details</h3>
+                        <form id="productForm">
+                            <div class="form-group">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="pName" placeholder="e.g., Wireless Mouse" oninput="updatePreview()">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Category</label>
+                                    <select class="form-control">
+                                        <option>Electronics</option>
+                                        <option>Fashion</option>
+                                        <option>Home & Living</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-control">
+                                        <option>Active</option>
+                                        <option>Hidden</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Price ($)</label>
+                                    <input type="number" class="form-control" id="pPrice" placeholder="0.00" oninput="updatePreview()" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Stock Quantity</label>
+                                    <input type="number" class="form-control" placeholder="10">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Image URL</label>
+                                <input type="text" class="form-control" id="pImage" placeholder="https://..." value="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80" oninput="updatePreview()">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" rows="4" placeholder="Describe your product..."></textarea>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-4">
+                                <button type="button" class="btn btn-outline">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="alert('Product saved in demo mode!')"><i class='bx bx-save'></i> Save Product</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Preview Card -->
+                    <div>
+                        <div class="card" style="position: sticky; top: 90px;">
+                            <h3 style="margin-bottom: 20px; font-size: 16px; color: var(--text-light); text-transform: uppercase;">Live Preview</h3>
+                            
+                            <div class="product-card">
+                                <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80" alt="Preview" class="product-img" id="previewImg">
+                                <div class="product-info">
+                                    <div class="product-title" id="previewTitle">Your Product Name</div>
+                                    <div class="product-price" id="previewPrice">$0.00</div>
+                                    <button class="btn btn-primary" style="width: 100%;" disabled>Add to Cart</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = requireAuth(['seller']);
+        
+        if (user) {
+            renderSidebarMenu(user.role, 'seller');
+            renderHeader(user);
+        }
+
+        function updatePreview() {
+            const name = document.getElementById('pName').value || 'Your Product Name';
+            const price = parseFloat(document.getElementById('pPrice').value || 0).toFixed(2);
+            const img = document.getElementById('pImage').value || 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80';
+
+            document.getElementById('previewTitle').innerText = name;
+            document.getElementById('previewPrice').innerText = '$' + price;
+            document.getElementById('previewImg').src = img;
+        }
+    </script>
+</body>
+</html>
