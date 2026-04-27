@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sales Management System</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -58,11 +58,11 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
         // If already logged in, redirect to dashboard
         if(getCurrentUser()) {
-            window.location.href = 'dashboard.html';
+            window.location.href = '/dashboard';
         }
     </script>
 </body>

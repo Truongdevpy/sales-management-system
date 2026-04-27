@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Sales System</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -43,7 +43,7 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
         // Check Auth
         const user = requireAuth();
@@ -107,8 +107,8 @@
                         </div>
                     </div>
                     <div class="flex gap-4 mt-4">
-                        <a href="admin.html" class="btn btn-primary"><i class='bx bx-check-shield'></i> Review Sellers</a>
-                        <a href="admin.html" class="btn btn-outline"><i class='bx bx-line-chart'></i> View Shop Stats</a>
+                        <a href="/admin" class="btn btn-primary"><i class='bx bx-check-shield'></i> Review Sellers</a>
+                        <a href="/admin" class="btn btn-outline"><i class='bx bx-line-chart'></i> View Shop Stats</a>
                     </div>
                 `;
             } else if (user.role === 'seller') {
@@ -144,8 +144,8 @@
                         </div>
                     </div>
                     <div class="flex gap-4 mt-4">
-                        <a href="seller.html" class="btn btn-primary"><i class='bx bx-plus'></i> Post Product</a>
-                        <a href="shop-products.html" class="btn btn-outline"><i class='bx bx-list-ul'></i> My Product List</a>
+                        <a href="/seller" class="btn btn-primary"><i class='bx bx-plus'></i> Post Product</a>
+                        <a href="/shop-products" class="btn btn-outline"><i class='bx bx-list-ul'></i> My Product List</a>
                     </div>
                 `;
             } else if (user.role === 'customer') {
@@ -184,8 +184,8 @@
                         </div>
                     </div>
                     <div class="flex gap-4 mt-4">
-                        <a href="checkout.html" class="btn btn-primary"><i class='bx bx-cart'></i> Shop Now</a>
-                        <a href="track-order.html" class="btn btn-outline"><i class='bx bx-search-alt'></i> Track Orders</a>
+                        <a href="/checkout" class="btn btn-primary"><i class='bx bx-cart'></i> Shop Now</a>
+                        <a href="/track-order" class="btn btn-outline"><i class='bx bx-search-alt'></i> Track Orders</a>
                     </div>
                 `;
             }

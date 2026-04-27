@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - Shopping</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -89,123 +89,77 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
-        const user = requireAuth(['customer']);
+    const user = requireAuth(['customer']);
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    if (user) {
+        renderSidebarMenu(user.role, 'checkout');
+        renderHeader(user);
+        loadRealProducts(); // Gọi hàm lấy dữ liệu thật
+        renderCart();
+    }
+
+    async function loadRealProducts() {
+    try {
+        const response = await fetch('/api/products'); // Gọi đến API vừa tạo ở Bước 1
+        const products = await response.json();
         
-        let cart = [];
-
-        if (user) {
-            renderSidebarMenu(user.role, 'checkout');
-            renderHeader(user);
-            renderShopProducts();
+        const container = document.getElementById('productList');
+        let html = '';
+        
+        if (products.length === 0) {
+            container.innerHTML = '<p>Không có sản phẩm nào trong kho.</p>';
+            return;
         }
 
-        function renderShopProducts() {
-            const list = document.getElementById('productList');
-            let html = '';
-            
-            DB.products.forEach(p => {
-                const isOos = p.status === 'out_of_stock';
-                html += `
-                    <div class="product-card">
-                        <img src="${p.image}" alt="" class="product-img">
-                        <div class="product-info">
-                            <div class="product-title">${p.name}</div>
-                            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 10px;">${p.category}</p>
-                            <div class="flex justify-between items-center">
-                                <div class="product-price" style="margin: 0;">${formatMoney(p.price)}</div>
-                                <button class="btn btn-primary" style="padding: 6px 12px;" ${isOos ? 'disabled' : ''} onclick="addToCart(${p.id})">
-                                    <i class='bx bx-plus'></i> Add
-                                </button>
-                            </div>
-                            ${isOos ? '<p style="color: var(--danger); font-size: 12px; margin-top: 5px;">Out of stock</p>' : ''}
-                        </div>
+        products.forEach(p => {
+            // Sử dụng đúng tên cột từ bảng products của bạn
+            html += `
+                <div class="card product-card">
+                    <img src="${p.image || '/static/default-product.png'}" class="product-img" onerror="this.src='/static/default-product.png'">
+                    <div class="product-info">
+                        <div class="product-title">${p.name}</div>
+                        <div class="product-price">${formatMoney(p.price)}</div>
+                        <p style="font-size: 12px; color: var(--text-light);">Kho: ${p.stock} | ${p.category}</p>
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" 
+                            onclick="addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price})">
+                            Add to Cart
+                        </button>
                     </div>
-                `;
-            });
-            list.innerHTML = html;
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) {
+        console.error("Lỗi kết nối API:", error);
+        document.getElementById('productList').innerHTML = '<p>Không thể tải dữ liệu từ máy chủ.</p>';
+    }
+}
+
+    async function processCheckout() {
+        if (cart.length === 0) return alert("Giỏ hàng trống!");
+
+        // Gửi dữ liệu thật lên API mà bạn đã viết trong order_services.py
+        const response = await fetch('/api/orders/place-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_id: user.id,
+                cart_data: cart
+            })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert('Đặt hàng thành công! Mã đơn: ' + result.order_id);
+            localStorage.removeItem('cart');
+            window.location.href = '/track-order';
+        } else {
+            alert('Lỗi: ' + result.message);
         }
-
-        function addToCart(prodId) {
-            const product = DB.products.find(p => p.id === prodId);
-            if(!product) return;
-
-            const existing = cart.find(c => c.productId === prodId);
-            if(existing) {
-                existing.quantity++;
-            } else {
-                cart.push({
-                    productId: product.id,
-                    name: product.name,
-                    price: product.price,
-                    image: product.image,
-                    quantity: 1
-                });
-            }
-            renderCart();
-        }
-
-        function renderCart() {
-            const container = document.getElementById('cartItems');
-            const countBtn = document.getElementById('cartCount');
-            const btn = document.getElementById('checkoutBtn');
-            
-            if(cart.length === 0) {
-                container.innerHTML = '<p class="text-center text-light mt-4" style="font-size: 14px;">Cart is empty</p>';
-                countBtn.innerText = '0';
-                btn.disabled = true;
-                document.getElementById('cartSubtotal').innerText = '$0.00';
-                document.getElementById('cartTotal').innerText = '$0.00';
-                return;
-            }
-
-            btn.disabled = false;
-            let html = '';
-            let subtotal = 0;
-
-            cart.forEach((item, index) => {
-                subtotal += item.price * item.quantity;
-                html += `
-                    <div class="cart-item">
-                        <img src="${item.image}" alt="" class="cart-item-img" style="width: 50px; height: 50px;">
-                        <div class="cart-item-info">
-                            <h4 style="font-size: 13px; margin-bottom: 4px;">${item.name}</h4>
-                            <div class="flex justify-between items-center">
-                                <span style="font-size: 13px; font-weight: 600; color: var(--primary);">${formatMoney(item.price)}</span>
-                                <div class="qty-control" style="transform: scale(0.8); transform-origin: right center;">
-                                    <button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>
-                                    <input type="text" class="qty-input" value="${item.quantity}" readonly>
-                                    <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-            countBtn.innerText = cart.length;
-            
-            document.getElementById('cartSubtotal').innerText = formatMoney(subtotal);
-            document.getElementById('cartTotal').innerText = formatMoney(subtotal + 5); // adding $5 shipping
-        }
-
-        function updateQty(index, change) {
-            if(cart[index].quantity + change > 0) {
-                cart[index].quantity += change;
-            } else {
-                cart.splice(index, 1);
-            }
-            renderCart();
-        }
-
-        function processCheckout() {
-            alert('Mock Checkout Successful! Order will reflect in Track Orders.');
-            cart = [];
-            renderCart();
-            window.location.href = 'track-order.html';
-        }
-    </script>
+    }
+</script>
 </body>
 </html>

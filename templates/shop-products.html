@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Products - Seller Area</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
             <div class="page-content">
                 <div class="page-title flex justify-between items-center" style="margin-bottom: 24px;">
                     <h1>My Products</h1>
-                    <a href="seller.html" class="btn btn-primary"><i class='bx bx-plus'></i> Add New</a>
+                    <a href="/seller" class="btn btn-primary"><i class='bx bx-plus'></i> Add New</a>
                 </div>
 
                 <!-- Stats -->
@@ -84,7 +84,7 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
         const user = requireAuth(['seller']);
         
