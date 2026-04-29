@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sales System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="app-layout" id="appLayout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1 id="welcomeText">Dashboard</h1>
+                    <div id="roleBadge"></div>
+                </div>
+
+                <div id="dashboardContent"></div>
+
+                <div id="productDiscoverySection" style="margin-top: 40px; display: none;">
+                    <div class="page-title flex justify-between items-center" style="margin-bottom: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
+                        <div>
+                            <h2>Khám phá sản phẩm</h2>
+                            <p style="color: var(--text-light); font-size: 14px; margin-top: 5px;">Danh sách sản phẩm từ tất cả nhà bán hàng</p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 24px;">
+                        
+                        <div>
+                            <div class="grid grid-cols-3 gap-4" id="allProductsGrid">
+                                <div style="grid-column: span 3; text-align: center; padding: 40px;">
+                                    <i class='bx bx-loader-alt bx-spin' style="font-size: 40px; color: var(--primary);"></i>
+                                    <p class="mt-2 text-light">Đang tải dữ liệu sản phẩm...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="card" style="position: sticky; top: 90px;">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 style="font-size: 16px;">Bộ lọc sản phẩm</h3>
+                                    <i class='bx bx-filter-alt' style="color: var(--primary); font-size: 20px;"></i>
+                                </div>
+                                
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Tìm kiếm</label>
+                                    <div class="header-search" style="border: 1px solid var(--border); background: var(--bg); width: 100%; padding: 8px 12px; border-radius: var(--radius);">
+                                        <i class='bx bx-search'></i>
+                                        <input type="text" id="filterSearch" placeholder="Nhập tên sản phẩm..." oninput="applyFilters()" style="border: none; background: transparent; outline: none; width: 85%; margin-left: 8px;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Danh mục</label>
+                                    <select class="form-control" id="filterCategory" onchange="applyFilters()">
+                                        <option value="all">Tất cả danh mục</option>
+                                        <option value="Điện thoại">Điện thoại</option>
+                                        <option value="Phụ kiện">Phụ kiện</option>
+                                        <option value="Đồ gia dụng">Đồ gia dụng</option>
+                                        <option value="Khác">Khác</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Khoảng giá (VNĐ)</label>
+                                    <div class="flex gap-2">
+                                        <input type="number" class="form-control" id="minPrice" placeholder="Từ" min="0" oninput="applyFilters()">
+                                        <input type="number" class="form-control" id="maxPrice" placeholder="Đến" min="0" oninput="applyFilters()">
+                                    </div>
+                                    <p id="priceError" style="color: var(--danger); font-size: 11px; margin-top: 5px; display: none;">Giá không được âm!</p>
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Trạng thái kho</label>
+                                    <select class="form-control" id="filterStock" onchange="applyFilters()">
+                                        <option value="all">Tất cả</option>
+                                        <option value="in_stock">Chỉ hiện hàng còn sẵn</option>
+                                    </select>
+                                </div>
+
+                                <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="resetFilters()">
+                                    <i class='bx bx-refresh'></i> Đặt lại bộ lọc
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        const user = requireAuth();
+        let allProductsData = []; 
+
+        if (user) {
+            renderSidebarMenu(user.role, 'dashboard');
+            renderHeader(user);
+
+            document.getElementById('welcomeText').innerText = `Welcome back, ${user.name}!`;
+            document.getElementById('roleBadge').innerHTML = `
+                <span class="badge ${getRoleBadgeClass(user.role)}">
+                    ${user.role.toUpperCase()}
+                </span>
+            `;
+
+            document.getElementById('productDiscoverySection').style.display = 'block';
+            renderDashboardMetrics(user);
+            fetchAllProducts();
+        }
+
+        function getRoleBadgeClass(role) {
+            if (role === 'admin') return 'badge-active';
+            if (role === 'seller') return 'badge-warning';
+            return 'badge-success';
+        }
+
+        function renderDashboardMetrics(user) {
+            const container = document.getElementById('dashboardContent');
+            let html = '';
+            
+            if (user.role === 'admin') {
+                html = `<div class="grid grid-cols-4 mb-4">
+                    <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-user-pin'></i></div><div class="stat-details"><h3>124</h3><p>Total Sellers</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon warning"><i class='bx bx-time'></i></div><div class="stat-details"><h3>0</h3><p>Pending Sellers</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon info"><i class='bx bx-shopping-bag'></i></div><div class="stat-details"><h3>1,540</h3><p>Total Orders</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon success"><i class='bx bx-dollar-circle'></i></div><div class="stat-details"><h3>$124,500</h3><p>Platform Revenue</p></div></div>
+                </div>`;
+            } else if (user.role === 'seller') {
+                html = `<div class="grid grid-cols-4 mb-4">
+                    <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-package'></i></div><div class="stat-details"><h3>4</h3><p>My Products</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon info"><i class='bx bx-cart-download'></i></div><div class="stat-details"><h3>45</h3><p>Total Orders</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon success"><i class='bx bx-wallet'></i></div><div class="stat-details"><h3>$8,500</h3><p>Revenue</p></div></div>
+                </div>`;
+            } else {
+                html = `<div class="grid grid-cols-4 mb-4">
+                    <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-shopping-bag'></i></div><div class="stat-details"><h3>2</h3><p>Total Orders</p></div></div>
+                    <div class="card stat-card"><div class="stat-icon success"><i class='bx bx-dollar'></i></div><div class="stat-details"><h3>$399.97</h3><p>Total Spent</p></div></div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        async function fetchAllProducts() {
+            try {
+                const response = await fetch('/api/products/');
+                allProductsData = await response.json();
+                renderProducts(allProductsData);
+            } catch (error) {
+                console.error("Lỗi:", error);
+                document.getElementById('allProductsGrid').innerHTML = '<div style="grid-column: span 3; text-align: center;"><p class="text-danger">Không thể kết nối đến máy chủ.</p></div>';
+            }
+        }
+
+        function renderProducts(products) {
+            const container = document.getElementById('allProductsGrid');
+            let html = '';
+
+            if (products.length === 0) {
+                container.innerHTML = `<div class="card" style="grid-column: span 3; text-align: center; padding: 40px;"><p class="text-light">Không có sản phẩm nào phù hợp.</p></div>`;
+                return;
+            }
+
+            products.forEach(p => {
+                let isOOS = p.stock <= 0;
+                let stockBadge = isOOS ? `<span class="badge badge-danger" style="position: absolute; top: 10px; right: 10px; z-index: 2;">Hết hàng</span>` : `<span class="badge badge-active" style="position: absolute; top: 10px; right: 10px; z-index: 2;">Kho: ${p.stock}</span>`;
+                let btnDisable = isOOS ? "disabled" : "";
+
+                // HTML THEO DÕI CLICK ĐỂ CHUYỂN TRANG
+                html += `
+                    <div class="card product-card" style="position: relative; padding: 0; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s;" 
+                         onclick="window.location.href='/product-detail?id=${p.id}'"
+                         onmouseover="this.style.transform='translateY(-5px)'" 
+                         onmouseout="this.style.transform='translateY(0)'">
+                         
+                        ${stockBadge}
+                        <img src="${p.image || '/static/default.png'}" class="product-img" style="border-radius: var(--radius) var(--radius) 0 0;" onerror="this.src='/static/default.png'">
+                        <div class="product-info" style="display: flex; flex-direction: column; flex: 1; padding: 16px;">
+                            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">${p.category || 'Khác'}</p>
+                            <div class="product-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.name}">${p.name}</div>
+                            <div class="product-price" style="margin-top: auto; margin-bottom: 12px;">${formatMoney(p.price)}</div>
+                            
+                            <button class="btn btn-primary" style="width: 100%;" 
+                                onclick="event.stopPropagation(); addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${p.image || '/static/default.png'}', ${p.stock})" ${btnDisable}>
+                                <i class='bx bx-cart-add'></i> Thêm vào giỏ
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function applyFilters() {
+            const keyword = document.getElementById('filterSearch').value.toLowerCase().trim();
+            const category = document.getElementById('filterCategory').value;
+            const stockStatus = document.getElementById('filterStock').value;
+            
+            let minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+            let maxPriceVal = document.getElementById('maxPrice').value;
+            let maxPrice = maxPriceVal ? parseFloat(maxPriceVal) : Infinity;
+
+            const errorMsg = document.getElementById('priceError');
+            if (minPrice < 0 || (maxPrice !== Infinity && maxPrice < 0)) {
+                errorMsg.style.display = 'block';
+                minPrice = Math.max(0, minPrice);
+                if (maxPrice !== Infinity) maxPrice = Math.max(0, maxPrice);
+            } else {
+                errorMsg.style.display = 'none';
+            }
+
+            const filteredData = allProductsData.filter(p => {
+                const matchKeyword = p.name.toLowerCase().includes(keyword);
+                const matchCategory = category === 'all' ? true : p.category === category;
+                const matchStock = stockStatus === 'all' ? true : p.stock > 0;
+                const matchPrice = p.price >= minPrice && p.price <= maxPrice;
+                return matchKeyword && matchCategory && matchStock && matchPrice;
+            });
+
+            renderProducts(filteredData);
+        }
+
+        function resetFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterCategory').value = 'all';
+            document.getElementById('filterStock').value = 'all';
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            document.getElementById('priceError').style.display = 'none';
+            renderProducts(allProductsData);
+        }
+
+        function addToCart(id, name, price, image, stock) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let existingItem = cart.find(item => item.product_id === id);
+
+            if (existingItem) {
+                if (existingItem.quantity < stock) {
+                    existingItem.quantity += 1;
+                    alert(`Đã tăng số lượng "${name}" trong giỏ hàng!`);
+                } else {
+                    alert(`Xin lỗi, sản phẩm này chỉ còn tối đa ${stock} cái.`);
+                    return;
+                }
+            } else {
+                cart.push({ product_id: id, name: name, price: price, quantity: 1, image: image, stock: stock });
+                alert(`Đã thêm "${name}" vào giỏ hàng thành công!`);
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+    </script>
+</body>
+</html>
