@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management - Sales System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Customer Management</h1>
+                    <button class="btn btn-primary" onclick="openCustomerForm()"><i class='bx bx-user-plus'></i> Add Customer</button>
+                </div>
+
+                <div class="grid grid-cols-4 mb-4">
+                    <div class="card stat-card">
+                        <div class="stat-icon primary"><i class='bx bx-group'></i></div>
+                        <div class="stat-details"><h3 id="totalCustomers">0</h3><p>Total Customers</p></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon success"><i class='bx bx-user-check'></i></div>
+                        <div class="stat-details"><h3 id="activeCustomers">0</h3><p>Active</p></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon warning"><i class='bx bx-user-x'></i></div>
+                        <div class="stat-details"><h3 id="inactiveCustomers">0</h3><p>Inactive</p></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4 seller-toolbar">
+                        <div class="flex gap-2 seller-filters">
+                            <div class="header-search" style="border: 1px solid var(--border); background: var(--bg);">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="customerKeyword" placeholder="Search customers..." oninput="debouncedLoadCustomers()">
+                            </div>
+                            <select class="form-control" id="customerStatusFilter" style="width: 160px;" onchange="loadCustomers()">
+                                <option value="all">All status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline" onclick="loadCustomers()"><i class='bx bx-refresh'></i> Refresh</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="customerModalTitle">Add Customer</h3>
+                <button class="close-modal" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" onsubmit="saveCustomer(event)">
+                    <input type="hidden" id="customerId">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input class="form-control" id="customerFullName" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input class="form-control" id="customerEmail" type="email">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input class="form-control" id="customerPhone">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input class="form-control" id="customerAddress">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="customerStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <p class="auth-message" id="customerMessage"></p>
+                    <div class="flex justify-between gap-2">
+                        <button type="button" class="btn btn-outline" onclick="closeCustomerModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class='bx bx-save'></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        const user = requireAuth(['admin']);
+        let customers = [];
+        let searchTimer = null;
+
+        if (user) {
+            renderSidebarMenu(user.role, 'customer-management');
+            renderHeader(user);
+            loadCustomers();
+        }
+
+        function debouncedLoadCustomers() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadCustomers, 250);
+        }
+
+        async function loadCustomers() {
+            const tbody = document.getElementById('customersBody');
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">Loading...</td></tr>`;
+
+            const params = new URLSearchParams({
+                keyword: document.getElementById('customerKeyword').value.trim(),
+                status: document.getElementById('customerStatusFilter').value
+            });
+
+            try {
+                const response = await fetch(`/api/customers/?${params.toString()}`);
+                customers = await response.json();
+                updateCustomerStats();
+                renderCustomersTable();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px; color: var(--danger);">Cannot load customers</td></tr>`;
+            }
+        }
+
+        function updateCustomerStats() {
+            const active = customers.filter(customer => customer.status === 'active').length;
+            document.getElementById('totalCustomers').innerText = customers.length;
+            document.getElementById('activeCustomers').innerText = active;
+            document.getElementById('inactiveCustomers').innerText = customers.length - active;
+        }
+
+        function renderCustomersTable() {
+            const tbody = document.getElementById('customersBody');
+
+            if (!customers.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">No customers found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = customers.map(customer => `
+                <tr>
+                    <td>#${customer.id}</td>
+                    <td><strong>${escapeHtml(customer.fullName || '-')}</strong></td>
+                    <td>${escapeHtml(customer.email || '-')}</td>
+                    <td>${escapeHtml(customer.phone || '-')}</td>
+                    <td>${escapeHtml(customer.address || '-')}</td>
+                    <td><span class="badge ${customer.status === 'active' ? 'badge-success' : 'badge-pending'}">${customer.status.toUpperCase()}</span></td>
+                    <td>${formatDateSafe(customer.createdAt)}</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline btn-icon-sm" onclick="openCustomerForm(${customer.id})"><i class='bx bx-edit-alt'></i></button>
+                            <button class="btn btn-danger btn-icon-sm" onclick="deleteCustomer(${customer.id})"><i class='bx bx-trash'></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCustomerForm(id = null) {
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerMessage').innerText = '';
+            document.getElementById('customerMessage').className = 'auth-message';
+            document.getElementById('customerId').value = id || '';
+
+            if (id) {
+                const customer = customers.find(item => item.id === id);
+                if (!customer) return;
+                document.getElementById('customerModalTitle').innerText = 'Edit Customer';
+                document.getElementById('customerFullName').value = customer.fullName || '';
+                document.getElementById('customerEmail').value = customer.email || '';
+                document.getElementById('customerPhone').value = customer.phone || '';
+                document.getElementById('customerAddress').value = customer.address || '';
+                document.getElementById('customerStatus').value = customer.status || 'active';
+            } else {
+                document.getElementById('customerModalTitle').innerText = 'Add Customer';
+            }
+
+            document.getElementById('customerModal').classList.add('active');
+        }
+
+        async function saveCustomer(event) {
+            event.preventDefault();
+            const id = document.getElementById('customerId').value;
+            const message = document.getElementById('customerMessage');
+            message.className = 'auth-message';
+            message.innerText = 'Saving...';
+
+            try {
+                const response = await fetch(id ? `/api/customers/${id}` : '/api/customers/', {
+                    method: id ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullName: document.getElementById('customerFullName').value,
+                        email: document.getElementById('customerEmail').value,
+                        phone: document.getElementById('customerPhone').value,
+                        address: document.getElementById('customerAddress').value,
+                        status: document.getElementById('customerStatus').value
+                    })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    message.classList.add('error');
+                    message.innerText = result.message || 'Save failed';
+                    return;
+                }
+
+                message.classList.add('success');
+                message.innerText = result.message || 'Saved';
+                await loadCustomers();
+                setTimeout(closeCustomerModal, 300);
+            } catch (error) {
+                message.classList.add('error');
+                message.innerText = 'Cannot connect to server';
+            }
+        }
+
+        async function deleteCustomer(id) {
+            if (!confirm('Delete this customer?')) return;
+            try {
+                const response = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (!response.ok) {
+                    alert(result.message || 'Delete failed');
+                    return;
+                }
+                await loadCustomers();
+            } catch (error) {
+                alert('Cannot connect to server');
+            }
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.remove('active');
+        }
+
+        function formatDateSafe(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return value;
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+    </script>
+</body>
+</html>

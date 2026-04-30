@@ -1,0 +1,12 @@
+﻿venv/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.env
+.flaskenv
+instance/
+*.sqlite3
+*.db
+static/uploads/*
+!static/uploads/.gitkeep

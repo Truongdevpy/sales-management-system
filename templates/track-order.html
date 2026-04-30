@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Orders - Shopping</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>My Orders</h1>
+                </div>
+
+                <div class="grid grid-cols-3 gap-20" style="gap: 24px;">
+                    
+                    <!-- Order List -->
+                    <div style="grid-column: span 2;">
+                        <div class="card mb-4">
+                            <h3 style="font-size: 16px; margin-bottom: 20px;">Order History</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Payment</th>
+                                            <th>Shipping</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ordersBody">
+                                        <!-- Rendered by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Details Panel -->
+                    <div>
+                        <div class="card" style="position: sticky; top: 90px;" id="orderDetailsPanel">
+                            <div class="flex justify-between items-center" style="margin-bottom: 20px;">
+                                <h3 style="font-size: 16px; color: var(--dark);">Order Details</h3>
+                                <span class="badge" style="background: rgba(0,0,0,0.05); color: var(--text);" id="detailOrderId">Select order</span>
+                            </div>
+                            
+                            <div id="detailContent" class="text-center text-light mt-4">
+                                <i class='bx bx-package' style="font-size: 40px; margin-bottom: 10px; color: var(--border);"></i>
+                                <p>Click an order to view details</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+    const user = requireAuth(['customer']);
+    if (user) {
+        renderSidebarMenu(user.role, 'track-order');
+        renderHeader(user);
+        loadMyOrders();
+    }
+
+    async function loadMyOrders() {
+    try {
+        const response = await fetch(`/api/orders/my-orders/${user.id}`);
+        const orders = await response.json();
+        
+        const tbody = document.getElementById('orderTableBody');
+        let html = '';
+        
+        if (!orders || orders.length === 0) {
+            html = '<tr><td colspan="5" class="text-center">Bạn chưa có đơn hàng nào.</td></tr>';
+        } else {
+            orders.forEach(order => {
+                // Khớp chính xác với tên cột: total_amount, shipping_status, created_at
+                html += `
+                    <tr onclick="viewOrderDetails(${order.id})" style="cursor: pointer;">
+                        <td>#ORD-${order.id}</td>
+                        <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                        <td style="font-weight: 600;">${formatMoney(parseFloat(order.total_amount))}</td>
+                        <td>
+                            <span class="badge ${getStatusClass(order.shipping_status)}">
+                                ${order.shipping_status}
+                            </span>
+                        </td>
+                        <td><i class='bx bx-chevron-right'></i></td>
+                    </tr>
+                `;
+            });
+        }
+        tbody.innerHTML = html;
+    } catch (error) {
+        console.error("Lỗi tải đơn hàng:", error);
+    }
+}
+
+// Cập nhật hàm getStatusClass theo các giá trị Enum của bạn
+function getStatusClass(status) {
+    switch(status) {
+        case 'đã giao': return 'badge-success';
+        case 'đang giao': return 'badge-warning';
+        case 'chờ giao': return 'badge-info';
+        default: return 'badge-light';
+    }
+}
+
+    function getStatusClass(status) {
+        if (status === 'đã giao') return 'badge-success';
+        if (status === 'đang giao') return 'badge-warning';
+        return 'badge-info';
+    }
+</script>
+</body>
+</html>
