@@ -20,11 +20,14 @@ app.register_blueprint(order_bp, url_prefix='/api/orders')
 app.register_blueprint(user_bp, url_prefix='/api/users')
 app.register_blueprint(customer_bp, url_prefix='/api/customers')
 
+
 # Import product blueprint
 from services.product_services import product_bp
 
 # Đăng ký blueprint cho API Products
 app.register_blueprint(product_bp, url_prefix='/api/products')
+
+
 
 
 def ensure_user_schema():
@@ -89,10 +92,15 @@ def track_order():
 def product_detail():
     return render_template('product-detail.html')
 
+@app.route('/manage-orders')
+def manage_orders():
+    return render_template('order-management.html')
+
 # 4. CHẠY ỨNG DỤNG
 if __name__ == '__main__':
     with app.app_context():
-        # Tự động tạo bảng nếu chưa có (nhớ tạo database trong phpMyAdmin trước)
         db.create_all()
         ensure_user_schema()
-    app.run(debug=True)
+    # Chạy trên port 5001 để tránh xung đột hệ thống
+    app.run(debug=True, port=5001
+)

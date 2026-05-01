@@ -6,6 +6,28 @@
     <title>Track Orders - Shopping</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* CSS bổ sung cho nút thanh toán */
+        .btn-pay {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-pay:hover {
+            background: #1d4ed8;
+        }
+        .text-done {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body>
 
@@ -44,6 +66,7 @@
                                             <th>Payment</th>
                                             <th>Shipping</th>
                                             <th>Action</th>
+                                            <th>Quick Pay</th>
                                         </tr>
                                     </thead>
                                     <tbody id="ordersBody">
@@ -76,6 +99,7 @@
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
+    // 1. Khởi tạo giao diện[cite: 1]
     const user = requireAuth(['customer']);
     if (user) {
         renderSidebarMenu(user.role, 'track-order');
@@ -83,55 +107,193 @@
         loadMyOrders();
     }
 
+    // 2. Hàm tải danh sách đơn hàng[cite: 8, 11]
     async function loadMyOrders() {
-    try {
-        const response = await fetch(`/api/orders/my-orders/${user.id}`);
-        const orders = await response.json();
-        
-        const tbody = document.getElementById('orderTableBody');
-        let html = '';
-        
-        if (!orders || orders.length === 0) {
-            html = '<tr><td colspan="5" class="text-center">Bạn chưa có đơn hàng nào.</td></tr>';
-        } else {
+        try {
+            const response = await fetch(`/api/orders/my-orders/${user.id}`);
+            const orders = await response.json();
+            
+            const tbody = document.getElementById('ordersBody');
+            // Cần 7 cột để khớp với thẻ <th>[cite: 11]
+            tbody.innerHTML = orders.length ? '' : '<tr><td colspan="7" class="text-center">Chưa có đơn hàng</td></tr>';
+            
             orders.forEach(order => {
-                // Khớp chính xác với tên cột: total_amount, shipping_status, created_at
-                html += `
+                // Logic xử lý cột thanh toán nhanh
+                let payBtnHtml = '';
+                if (order.payment_status === 'chờ thanh toán') {
+                    // stopPropagation để khi bấm nút không bị nhảy vào xem chi tiết đơn hàng
+                    payBtnHtml = `<button onclick="event.stopPropagation(); payNow(${order.id})" class="btn-pay">Thanh toán ngay</button>`;
+                } else {
+                    payBtnHtml = `<span class="text-done"><i class='bx bx-check-double'></i> Hoàn tất</span>`;
+                }
+
+                tbody.innerHTML += `
                     <tr onclick="viewOrderDetails(${order.id})" style="cursor: pointer;">
-                        <td>#ORD-${order.id}</td>
-                        <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                        <td style="font-weight: 600;">${formatMoney(parseFloat(order.total_amount))}</td>
+                        <td><strong>#ORD-${order.id}</strong></td>
+                        <td>${new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                        <td style="color: var(--primary); font-weight: bold;">
+                            ${formatMoney(order.total_amount)}
+                        </td>
+                        <td><span class="badge badge-info">${order.payment_status}</span></td>
                         <td>
                             <span class="badge ${getStatusClass(order.shipping_status)}">
                                 ${order.shipping_status}
                             </span>
                         </td>
-                        <td><i class='bx bx-chevron-right'></i></td>
+                        <td><button class="btn-view"><i class='bx bx-show'></i></button></td>
+                        <td>${payBtnHtml}</td>
                     </tr>
                 `;
             });
+        } catch (error) {
+            console.error("Lỗi fetch đơn hàng:", error);
         }
-        tbody.innerHTML = html;
-    } catch (error) {
-        console.error("Lỗi tải đơn hàng:", error);
     }
-}
 
-// Cập nhật hàm getStatusClass theo các giá trị Enum của bạn
-function getStatusClass(status) {
-    switch(status) {
-        case 'đã giao': return 'badge-success';
-        case 'đang giao': return 'badge-warning';
-        case 'chờ giao': return 'badge-info';
-        default: return 'badge-light';
+    // 3. Hàm xem chi tiết đơn hàng[cite: 3, 8]
+    async function viewOrderDetails(orderId) {
+        const detailContent = document.getElementById('detailContent');
+        const detailOrderId = document.getElementById('detailOrderId');
+        
+        detailOrderId.innerText = `#ORD-${orderId}`;
+        detailContent.innerHTML = `<div class="text-center"><i class='bx bx-loader-alt bx-spin'></i> Đang tải...</div>`;
+        
+        try {
+            const res = await fetch(`/api/orders/${orderId}`);
+            const data = await res.json();
+            
+            let html = `
+                <div class="order-info-mini mb-4" style="text-align: left; font-size: 13px;">
+                    <p><strong>Ngày đặt:</strong> ${data.created_at}</p>
+                    <p><strong>Trạng thái giao:</strong> ${data.shipping_status}</p>
+                    <p><strong>Thanh toán:</strong> ${data.payment_status}</p>
+                </div>
+                <table class="table-mini" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left;">Sản phẩm</th>
+                            <th>SL</th>
+                            <th style="text-align: right;">Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.items.forEach(item => {
+                html += `
+                    <tr style="border-bottom: 1px dotted var(--border);">
+                        <td style="text-align: left; padding: 8px 0;"><small>${item.product_name}</small></td>
+                        <td style="text-align: center;">${item.quantity}</td>
+                        <td style="text-align: right;">${formatMoney(item.subtotal)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                <div class="total-section mt-4" style="border-top: 2px solid var(--primary); padding-top: 15px;">
+                    <div class="flex justify-between items-center">
+                        <span style="font-weight: 500;">Thành tiền:</span>
+                        <span class="text-primary" style="font-size: 1.2rem; font-weight: bold;">
+                            ${formatMoney(data.total_amount)}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            detailContent.innerHTML = html;
+        } catch (e) {
+            detailContent.innerHTML = "Không thể tải chi tiết đơn hàng.";
+        }
     }
-}
 
+    // 4. Cấu hình ngân hàng của Sàn TMĐT[cite: 8]
+    const BANK_CONFIG = {
+        bankId: "ICB", // Ví dụ: VietinBank
+        accountNo: "123456789", // Số tài khoản sàn
+        template: "qr_only" // Chỉ lấy mã QR
+    };
+
+    // 5. Hàm xử lý hiển thị QR thanh toán[cite: 8]
+    async function payNow(orderId) {
+        const detailContent = document.getElementById('detailContent');
+        const detailOrderId = document.getElementById('detailOrderId');
+        
+        detailOrderId.innerText = `#ORD-${orderId}`;
+        detailContent.innerHTML = `<div class="text-center"><i class='bx bx-loader-alt bx-spin'></i> Đang tạo mã QR...</div>`;
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}`);
+            const data = await res.json();
+            
+            const amount = data.total_amount;
+            const description = `THANH TOAN DON HANG ORD${orderId}`;
+
+            const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.bankId}-${BANK_CONFIG.accountNo}-${BANK_CONFIG.template}.png?amount=${amount}&addInfo=${encodeURIComponent(description)}`;
+
+            let html = `
+                <div class="qr-payment-container" style="text-align: center; padding: 10px;">
+                    <p style="margin-bottom: 15px; font-weight: 500; color: var(--dark);">Quét mã để thanh toán cho Sàn</p>
+                    
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #eee; display: inline-block;">
+                        <img src="${qrUrl}" alt="QR Code" style="width: 200px; height: 200px; display: block;">
+                    </div>
+
+                    <div class="mt-4" style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 13px;">
+                        <p><strong>Số tiền:</strong> <span class="text-primary">${formatMoney(amount)}</span></p>
+                        <p><strong>Nội dung:</strong> <span style="color: #d946ef; font-weight: bold;">ORD${orderId}</span></p>
+                        <p style="font-size: 11px; color: #666; margin-top: 10px; font-style: italic;">
+                            * Vui lòng giữ nguyên nội dung chuyển khoản để hệ thống tự động xác nhận.
+                        </p>
+                    </div>
+
+                    <button onclick="confirmPaymentAfterQR(${orderId})" class="btn-pay" style="width: 100%; margin-top: 20px;">
+                        Tôi đã chuyển khoản thành công
+                    </button>
+                    <button onclick="viewOrderDetails(${orderId})" style="background: none; border: none; color: #666; cursor: pointer; margin-top: 10px; font-size: 12px;">
+                        Quay lại xem chi tiết
+                    </button>
+                </div>
+            `;
+            
+            detailContent.innerHTML = html;
+
+        } catch (e) {
+            console.error(e);
+            detailContent.innerHTML = "Không thể tạo mã thanh toán.";
+        }
+    }
+
+    // 6. Hàm gửi lệnh xác nhận sau khi quét QR[cite: 8]
+    async function confirmPaymentAfterQR(orderId) {
+        if(!confirm("Hệ thống sẽ kiểm tra giao dịch của bạn. Xác nhận đã chuyển?")) return;
+        
+        try {
+            const response = await fetch(`/api/orders/confirm-payment/${orderId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if(response.ok) {
+                alert("Đã gửi yêu cầu xác nhận thanh toán!");
+                loadMyOrders(); // Tải lại danh sách để cập nhật trạng thái[cite: 8]
+                document.getElementById('detailContent').innerHTML = `<p>Chọn đơn hàng để xem chi tiết</p>`;
+            }
+        } catch (error) {
+            alert("Lỗi kết nối.");
+        }
+    }
+
+    // 7. Hàm hỗ trợ giao diện[cite: 11]
     function getStatusClass(status) {
-        if (status === 'đã giao') return 'badge-success';
-        if (status === 'đang giao') return 'badge-warning';
-        return 'badge-info';
+        switch(status) {
+            case 'đã giao': return 'badge-success';
+            case 'đang giao': return 'badge-warning';
+            case 'chờ giao': return 'badge-info';
+            default: return 'badge-light';
+        }
     }
-</script>
+    </script>
 </body>
 </html>

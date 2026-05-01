@@ -285,39 +285,52 @@
     }
 
     async function processCheckout() {
-        if (cart.length === 0) return;
-        
-        const info = {
-            name: document.getElementById('custName').value,
-            phone: document.getElementById('custPhone').value,
-            address: document.getElementById('custAddr').value
-        };
+    if (cart.length === 0) return;
+    
+    const info = {
+        name: document.getElementById('custName').value,
+        phone: document.getElementById('custPhone').value,
+        address: document.getElementById('custAddr').value
+    };
 
-        if(!info.name || !info.phone || !info.address) {
-            alert("Vui lòng điền đầy đủ thông tin giao hàng!");
-            return;
-        }
+    if(!info.name || !info.phone || !info.address) {
+        alert("Vui lòng điền đầy đủ thông tin giao hàng!");
+        return;
+    }
 
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    checkoutBtn.disabled = true; // Chống bấm nhiều lần
+    checkoutBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Đang xử lý...";
+
+    try {
         const response = await fetch('/api/orders/place-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 customer_id: user.id,
-                cart_data: cart,
-                shipping_info: info
+                cart_data: cart // Backend sẽ xử lý trừ kho và tính tiền dựa trên list này
             })
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            const result = await response.json();
             alert('Đặt hàng thành công! Mã đơn: ' + result.order_id);
             localStorage.removeItem('cart');
             cart = [];
             window.location.href = '/track-order';
         } else {
-            alert('Lỗi khi đặt hàng!');
+            // Hiển thị lỗi cụ thể từ Backend (ví dụ: "Sản phẩm A không đủ hàng")
+            alert('Lỗi: ' + (result.message || 'Không thể hoàn tất đơn hàng'));
         }
+    } catch (error) {
+        console.error("Lỗi kết nối:", error);
+        alert('Lỗi kết nối server!');
+    } finally {
+        checkoutBtn.disabled = false;
+        checkoutBtn.innerHTML = "<i class='bx bx-check-double'></i> Đặt hàng ngay";
     }
+}
 
     document.getElementById('productList').addEventListener('click', function(e) {
         const card = e.target.closest('.product-card');

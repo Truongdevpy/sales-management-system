@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Orders - Seller</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+            <div class="page-content">
+                <div class="page-title"><h1>Quản lý đơn hàng</h1></div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Ngày đặt</th>
+                                <th>Tổng tiền</th>
+                                <th>Thanh toán</th>
+                                <th>Vận chuyển</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sellerOrdersBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        const user = requireAuth(['seller']); // Chỉ cho phép seller
+        if (user) {
+            renderSidebarMenu(user.role, 'manage-orders');
+            renderHeader(user);
+            loadSellerOrders();
+        }
+
+        async function loadSellerOrders() {
+            const res = await fetch(`/api/orders/seller/${user.id}`);
+            const orders = await res.json();
+            const tbody = document.getElementById('sellerOrdersBody');
+            
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td>#ORD-${order.id}</td>
+                    <td>${order.created_at}</td>
+                    <td>${formatMoney(order.total_amount)}</td>
+                    <td>
+                        <select onchange="updateStatus(${order.id}, 'payment', this.value)">
+                            <option value="chờ thanh toán" ${order.payment_status === 'chờ thanh toán' ? 'selected' : ''}>Chờ thanh toán</option>
+                            <option value="đã thanh toán" ${order.payment_status === 'đã thanh toán' ? 'selected' : ''}>Đã thanh toán</option>
+                            <option value="thất bại" ${order.payment_status === 'thất bại' ? 'selected' : ''}>Thất bại</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="updateStatus(${order.id}, 'shipping', this.value)">
+                            <option value="chờ giao" ${order.shipping_status === 'chờ giao' ? 'selected' : ''}>Chờ giao</option>
+                            <option value="đang giao" ${order.shipping_status === 'đang giao' ? 'selected' : ''}>Đang giao</option>
+                            <option value="đã giao" ${order.shipping_status === 'đã giao' ? 'selected' : ''}>Đã giao</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-view" onclick="viewDetails(${order.id})"><i class='bx bx-show'></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateStatus(orderId, type, value) {
+            const payload = {};
+            if (type === 'payment') payload.payment_status = value;
+            if (type === 'shipping') payload.shipping_status = value;
+
+            const res = await fetch(`/api/orders/update-status/${orderId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) alert("Cập nhật trạng thái thành công!");
+        }
+    </script>
+</body>
+</html>

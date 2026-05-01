@@ -141,6 +141,11 @@ function renderSidebarMenu(role, currentPage) {
             <a href="/product-management" class="menu-item ${currentPage === 'product-management' ? 'active' : ''}">
                 <i class='bx bx-edit-alt'></i> Manage Products
             </a>
+            
+            <!-- Phần quản lý đơn hàng mới thêm vào -->
+            <a href="/manage-orders" class="menu-item ${currentPage === 'manage-orders' ? 'active' : ''}">
+                <i class='bx bx-list-check'></i> Manage Orders
+            </a>
         `;
     }
 

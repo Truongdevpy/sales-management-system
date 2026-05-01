@@ -146,11 +146,21 @@
                     <div class="card stat-card"><div class="stat-icon warning"><i class='bx bx-user-check'></i></div><div class="stat-details"><h3 id="metricActiveCustomers">0</h3><p>Active Customers</p></div></div>
                 </div>`;
             } else if (user.role === 'seller') {
-                html = `<div class="grid grid-cols-4 mb-4">
-                    <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-package'></i></div><div class="stat-details"><h3 id="metricMyProducts">0</h3><p>My Products</p></div></div>
-                    <div class="card stat-card"><div class="stat-icon success"><i class='bx bx-check-circle'></i></div><div class="stat-details"><h3 id="metricMyInStock">0</h3><p>In Stock</p></div></div>
-                    <div class="card stat-card"><div class="stat-icon danger"><i class='bx bx-error-circle'></i></div><div class="stat-details"><h3 id="metricMyOutStock">0</h3><p>Out of Stock</p></div></div>
-                </div>`;
+                html = `
+    <div class="grid grid-cols-4 mb-4" style="gap: 20px;">
+        <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-package'></i></div><div class="stat-details"><h3 id="metricMyProducts">0</h3><p>My Products</p></div></div>
+        <div class="card stat-card"><div class="stat-icon success"><i class='bx bx-check-circle'></i></div><div class="stat-details"><h3 id="metricMyInStock">0</h3><p>In Stock</p></div></div>
+        <div class="card stat-card"><div class="stat-icon danger"><i class='bx bx-error-circle'></i></div><div class="stat-details"><h3 id="metricMyOutStock">0</h3><p>Out of Stock</p></div></div>
+        
+        <!-- OPTION MỚI THÊM VÀO: Card dẫn sang trang Quản lý đơn hàng -->
+        <div class="card stat-card" onclick="window.location.href='/manage-orders'" style="cursor: pointer; border: 1px dashed var(--primary); background: rgba(37, 99, 235, 0.05);">
+            <div class="stat-icon info"><i class='bx bx-list-ul'></i></div>
+            <div class="stat-details">
+                <h3>Manager</h3>
+                <p>Manage Orders <i class='bx bx-right-arrow-alt'></i></p>
+            </div>
+        </div>
+    </div>`;
             } else {
                 html = `<div class="grid grid-cols-4 mb-4">
                     <div class="card stat-card"><div class="stat-icon primary"><i class='bx bx-shopping-bag'></i></div><div class="stat-details"><h3>2</h3><p>Total Orders</p></div></div>
