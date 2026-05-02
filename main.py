@@ -87,6 +87,12 @@ def checkout():
 def track_order():
     return render_template('track-order.html')
 
+@app.route('/invoice/<int:order_id>')
+def view_invoice(order_id):
+    """Mở trang giao diện hóa đơn"""
+    # Bạn chỉ cần truyền order_id sang để JavaScript trong file HTML tự xử lý tiếp
+    return render_template('invoice.html', order_id=order_id)
+
 # --- ROUTE MỚI ĐƯỢC THÊM VÀO ĐỂ KHÔNG BỊ LỖI 404 ---
 @app.route('/product-detail')
 def product_detail():

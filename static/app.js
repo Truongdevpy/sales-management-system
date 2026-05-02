@@ -183,3 +183,4 @@ function formatMoney(amount) {
 function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('vi-VN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
+

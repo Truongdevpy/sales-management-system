@@ -67,6 +67,7 @@
                                             <th>Shipping</th>
                                             <th>Action</th>
                                             <th>Quick Pay</th>
+                                            <th>Invoice</th>
                                         </tr>
                                     </thead>
                                     <tbody id="ordersBody">
@@ -108,14 +109,16 @@
     }
 
     // 2. Hàm tải danh sách đơn hàng[cite: 8, 11]
+    // 2. Hàm tải danh sách đơn hàng
     async function loadMyOrders() {
         try {
             const response = await fetch(`/api/orders/my-orders/${user.id}`);
             const orders = await response.json();
             
             const tbody = document.getElementById('ordersBody');
-            // Cần 7 cột để khớp với thẻ <th>[cite: 11]
-            tbody.innerHTML = orders.length ? '' : '<tr><td colspan="7" class="text-center">Chưa có đơn hàng</td></tr>';
+            
+            // Cập nhật colspan thành 8 để khớp với số lượng <th> trong bảng của bạn
+            tbody.innerHTML = orders.length ? '' : '<tr><td colspan="8" class="text-center">Chưa có đơn hàng</td></tr>';
             
             orders.forEach(order => {
                 // Logic xử lý cột thanh toán nhanh
@@ -140,8 +143,18 @@
                                 ${order.shipping_status}
                             </span>
                         </td>
-                        <td><button class="btn-view"><i class='bx bx-show'></i></button></td>
+                        <td>
+                            <button class="btn-view"><i class='bx bx-show'></i></button>
+                        </td>
                         <td>${payBtnHtml}</td>
+                        <!-- Cột Invoice mới thêm -->
+                        <td>
+                            <button onclick="event.stopPropagation(); window.open('/invoice/${order.id}', '_blank')" 
+                                    class="btn-pay" 
+                                    style="background: #64748b; display: flex; align-items: center; gap: 5px;">
+                                <i class='bx bx-file'></i> Hóa đơn
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -149,7 +162,6 @@
             console.error("Lỗi fetch đơn hàng:", error);
         }
     }
-
     // 3. Hàm xem chi tiết đơn hàng[cite: 3, 8]
     async function viewOrderDetails(orderId) {
         const detailContent = document.getElementById('detailContent');

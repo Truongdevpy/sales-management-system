@@ -767,3 +767,4 @@ td {
     .admin-tabs, .seller-toolbar, .seller-filters { flex-direction: column; align-items: stretch; }
     .seller-filters .header-search, .seller-filters .form-control { width: 100% !important; }
 }
+
