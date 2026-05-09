@@ -9,6 +9,12 @@
 <body>
     <div class="app-layout">
         <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
             <nav class="sidebar-menu" id="sidebarMenu"></nav>
         </aside>
 
@@ -18,19 +24,21 @@
                 <div class="page-title"><h1>Quản lý đơn hàng</h1></div>
                 
                 <div class="card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Mã đơn</th>
-                                <th>Ngày đặt</th>
-                                <th>Tổng tiền</th>
-                                <th>Thanh toán</th>
-                                <th>Vận chuyển</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sellerOrdersBody"></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Ngày đặt</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Thanh toán</th>
+                                    <th>Vận chuyển</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sellerOrdersBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
@@ -38,56 +46,92 @@
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
-        const user = requireAuth(['seller']); // Chỉ cho phép seller
+        // 1. Khởi tạo giao diện
+        const user = requireAuth(['seller']); 
         if (user) {
             renderSidebarMenu(user.role, 'manage-orders');
             renderHeader(user);
             loadSellerOrders();
         }
 
+        // 2. Tải danh sách đơn hàng dành cho Seller
         async function loadSellerOrders() {
-            const res = await fetch(`/api/orders/seller/${user.id}`);
-            const orders = await res.json();
-            const tbody = document.getElementById('sellerOrdersBody');
-            
-            tbody.innerHTML = orders.map(order => `
-                <tr>
-                    <td>#ORD-${order.id}</td>
-                    <td>${order.created_at}</td>
-                    <td>${formatMoney(order.total_amount)}</td>
-                    <td>
-                        <select onchange="updateStatus(${order.id}, 'payment', this.value)">
-                            <option value="chờ thanh toán" ${order.payment_status === 'chờ thanh toán' ? 'selected' : ''}>Chờ thanh toán</option>
-                            <option value="đã thanh toán" ${order.payment_status === 'đã thanh toán' ? 'selected' : ''}>Đã thanh toán</option>
-                            <option value="thất bại" ${order.payment_status === 'thất bại' ? 'selected' : ''}>Thất bại</option>
-                        </select>
-                    </td>
-                    <td>
-                        <select onchange="updateStatus(${order.id}, 'shipping', this.value)">
-                            <option value="chờ giao" ${order.shipping_status === 'chờ giao' ? 'selected' : ''}>Chờ giao</option>
-                            <option value="đang giao" ${order.shipping_status === 'đang giao' ? 'selected' : ''}>Đang giao</option>
-                            <option value="đã giao" ${order.shipping_status === 'đã giao' ? 'selected' : ''}>Đã giao</option>
-                        </select>
-                    </td>
-                    <td>
-                        <button class="btn-view" onclick="viewDetails(${order.id})"><i class='bx bx-show'></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            try {
+                const res = await fetch(`/api/orders/seller/${user.id}`);
+                const orders = await res.json();
+                const tbody = document.getElementById('sellerOrdersBody');
+                
+                tbody.innerHTML = orders.map(order => {
+                    let actionBtnHtml = '';
+
+                    // LOGIC DUYỆT VẬN CHUYỂN MỚI
+                    if (order.shipping_status === 'đã giao') {
+                        actionBtnHtml = `<span class="text-done" style="color: #10b981; font-weight: 600;">✅ Đã đến nơi</span>`;
+                    } 
+                    else if (order.payment_status === 'đã thanh toán') {
+                        // Chỉ hiện nút duyệt khi đã thanh toán
+                        actionBtnHtml = `
+                            <button class="btn-pay" onclick="approveShipping(${order.id})" style="background: #10b981; margin-right: 5px;">
+                                <i class='bx bx-check-circle'></i> Duyệt giao hàng
+                            </button>`;
+                    } 
+                    else {
+                        // Nếu chưa thanh toán thì hiện cảnh báo
+                        actionBtnHtml = `<span style="color: #ef4444; font-size: 11px; font-style: italic;">Chờ khách thanh toán...</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td><strong>#ORD-${order.id}</strong></td>
+                            <td>${new Date(order.created_at).toLocaleString('vi-VN')}</td>
+                            <td style="font-weight: bold; color: var(--primary);">${formatMoney(order.total_amount)}</td>
+                            <td><span class="badge ${order.payment_status === 'đã thanh toán' ? 'badge-success' : 'badge-info'}">${order.payment_status}</span></td>
+                            <td><span class="badge ${getStatusClass(order.shipping_status)}">${order.shipping_status}</span></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    ${actionBtnHtml}
+                                    <button class="btn-view" onclick="window.open('/invoice/${order.id}', '_blank')">
+                                        <i class='bx bx-show'></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error("Lỗi:", error);
+            }
         }
 
-        async function updateStatus(orderId, type, value) {
-            const payload = {};
-            if (type === 'payment') payload.payment_status = value;
-            if (type === 'shipping') payload.shipping_status = value;
+        // 3. Hàm xác nhận vận chuyển
+        async function approveShipping(orderId) {
+            if(!confirm("Xác nhận đơn hàng này đã vận chuyển thành công?")) return;
 
-            const res = await fetch(`/api/orders/update-status/${orderId}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
+            try {
+                const res = await fetch(`/api/orders/update-status/${orderId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ shipping_status: 'đã giao' })
+                });
 
-            if (res.ok) alert("Cập nhật trạng thái thành công!");
+                if (res.ok) {
+                    alert("Đã duyệt vận chuyển thành công!");
+                    loadSellerOrders(); 
+                } else {
+                    alert("Không thể cập nhật trạng thái.");
+                }
+            } catch (error) {
+                console.error("Lỗi duyệt vận chuyển:", error);
+            }
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'đã giao': return 'badge-success';
+                case 'đang giao': return 'badge-warning';
+                case 'chờ giao': return 'badge-info';
+                default: return 'badge-light';
+            }
         }
     </script>
 </body>
