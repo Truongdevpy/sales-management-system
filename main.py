@@ -1,6 +1,9 @@
 from flask import Flask, render_template
+from sqlalchemy import text
 from models import db
 from services.order_services import order_bp
+from services.user_services import user_bp
+from services.customer_services import customer_bp
 
 app = Flask(__name__)
 
@@ -14,6 +17,48 @@ db.init_app(app)
 
 # 2. ĐĂNG KÝ BLUEPRINT (Cho các API xử lý dữ liệu)
 app.register_blueprint(order_bp, url_prefix='/api/orders')
+app.register_blueprint(user_bp, url_prefix='/api/users')
+app.register_blueprint(customer_bp, url_prefix='/api/customers')
+
+
+# Import product blueprint
+from services.product_services import product_bp
+
+# Đăng ký blueprint cho API Products
+app.register_blueprint(product_bp, url_prefix='/api/products')
+
+
+
+
+def ensure_user_schema():
+    result = db.session.execute(text("SHOW COLUMNS FROM users")).fetchall()
+    columns = {row[0] for row in result}
+
+    if 'seller_status' not in columns:
+        db.session.execute(text(
+            "ALTER TABLE users "
+            "ADD seller_status ENUM('pending','approved','rejected') DEFAULT 'approved'"
+        ))
+
+    if 'shop_name' not in columns:
+        db.session.execute(text("ALTER TABLE users ADD shop_name VARCHAR(100) DEFAULT NULL"))
+
+    if 'phone' not in columns:
+        db.session.execute(text("ALTER TABLE users ADD phone VARCHAR(20) DEFAULT NULL"))
+
+    if 'address' not in columns:
+        db.session.execute(text("ALTER TABLE users ADD address VARCHAR(255) DEFAULT NULL"))
+
+    if 'business_type' not in columns:
+        db.session.execute(text("ALTER TABLE users ADD business_type VARCHAR(100) DEFAULT NULL"))
+
+    if 'shop_description' not in columns:
+        db.session.execute(text("ALTER TABLE users ADD shop_description TEXT NULL"))
+
+    db.session.execute(text(
+        "UPDATE users SET seller_status = 'approved' WHERE seller_status IS NULL"
+    ))
+    db.session.commit()
 
 # 3. CÁC ROUTE ĐỂ HIỂN THỊ GIAO DIỆN (FRONTEND)
 
@@ -34,9 +79,21 @@ def admin():
 def seller():
     return render_template('seller.html')
 
+@app.route('/seller-bank-config')
+def seller_bank_config():
+    return render_template('seller-bank-config.html')
+
 @app.route('/shop-products')
 def shop_products():
     return render_template('shop-products.html')
+
+@app.route('/product-management')
+def product_management():
+    return render_template('product-management.html')
+
+@app.route('/customer-management')
+def customer_management():
+    return render_template('customer-management.html')
 
 @app.route('/checkout')
 def checkout():
@@ -46,9 +103,26 @@ def checkout():
 def track_order():
     return render_template('track-order.html')
 
+@app.route('/invoice/<int:order_id>')
+def view_invoice(order_id):
+    """Mở trang giao diện hóa đơn"""
+    # Bạn chỉ cần truyền order_id sang để JavaScript trong file HTML tự xử lý tiếp
+    return render_template('invoice.html', order_id=order_id)
+
+# --- ROUTE MỚI ĐƯỢC THÊM VÀO ĐỂ KHÔNG BỊ LỖI 404 ---
+@app.route('/product-detail')
+def product_detail():
+    return render_template('product-detail.html')
+
+@app.route('/manage-orders')
+def manage_orders():
+    return render_template('order-management.html')
+
 # 4. CHẠY ỨNG DỤNG
 if __name__ == '__main__':
     with app.app_context():
-        # Tự động tạo bảng nếu chưa có (nhớ tạo database trong phpMyAdmin trước)
         db.create_all()
-    app.run(debug=True)
+        ensure_user_schema()
+    # Chạy trên port 5001 để tránh xung đột hệ thống
+    app.run(debug=True, port=5001
+)

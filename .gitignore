@@ -1,0 +1,14 @@
+﻿venv/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.env
+.flaskenv
+instance/
+*.sqlite3
+*.db
+static/uploads/*
+!static/uploads/.gitkeep
+*.docx
+Bao_cao_phan_Nguyen_Van_Truong*.docx

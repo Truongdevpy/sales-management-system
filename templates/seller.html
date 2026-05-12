@@ -28,77 +28,59 @@
                     <h1>Add New Product</h1>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4">
-                    <!-- Form -->
-                    <div class="card" style="grid-column: span 2;">
-                        <h3 style="margin-bottom: 20px; font-size: 18px;">Product Details</h3>
-                        <form id="productForm">
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <h3 style="margin-bottom: 20px; font-size: 18px;">Product Details</h3>
+                    <form id="productForm">
+                        <div class="form-group">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="pName" placeholder="e.g., iPhone 17 ProMax">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
                             <div class="form-group">
-                                <label class="form-label">Product Name</label>
-                                <input type="text" class="form-control" id="pName" placeholder="e.g., Wireless Mouse" oninput="updatePreview()">
+                                <label class="form-label">Category</label>
+                                <select class="form-control" id="pCategory">
+                                    <option value="Điện thoại">Điện thoại</option>
+                                    <option value="Phụ kiện">Phụ kiện</option>
+                                    <option value="Đồ gia dụng">Đồ gia dụng</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
                             </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="form-group">
-                                    <label class="form-label">Category</label>
-                                    <select class="form-control">
-                                        <option>Electronics</option>
-                                        <option>Fashion</option>
-                                        <option>Home & Living</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Status</label>
-                                    <select class="form-control">
-                                        <option>Active</option>
-                                        <option>Hidden</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="form-group">
-                                    <label class="form-label">Price ($)</label>
-                                    <input type="number" class="form-control" id="pPrice" placeholder="0.00" oninput="updatePreview()" value="0">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Stock Quantity</label>
-                                    <input type="number" class="form-control" placeholder="10">
-                                </div>
-                            </div>
-
                             <div class="form-group">
-                                <label class="form-label">Image URL</label>
-                                <input type="text" class="form-control" id="pImage" placeholder="https://..." value="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80" oninput="updatePreview()">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Description</label>
-                                <textarea class="form-control" rows="4" placeholder="Describe your product..."></textarea>
-                            </div>
-
-                            <div class="flex justify-between items-center mt-4">
-                                <button type="button" class="btn btn-outline">Cancel</button>
-                                <button type="button" class="btn btn-primary" onclick="alert('Product saved in demo mode!')"><i class='bx bx-save'></i> Save Product</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Preview Card -->
-                    <div>
-                        <div class="card" style="position: sticky; top: 90px;">
-                            <h3 style="margin-bottom: 20px; font-size: 16px; color: var(--text-light); text-transform: uppercase;">Live Preview</h3>
-                            
-                            <div class="product-card">
-                                <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80" alt="Preview" class="product-img" id="previewImg">
-                                <div class="product-info">
-                                    <div class="product-title" id="previewTitle">Your Product Name</div>
-                                    <div class="product-price" id="previewPrice">$0.00</div>
-                                    <button class="btn btn-primary" style="width: 100%;" disabled>Add to Cart</button>
-                                </div>
+                                <label class="form-label">Status</label>
+                                <select class="form-control">
+                                    <option>Active</option>
+                                    <option>Hidden</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Price (VNĐ)</label>
+                                <input type="number" class="form-control" id="pPrice" placeholder="0" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" id="pStock" placeholder="10" value="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tải ảnh lên</label>
+                            <input type="file" class="form-control" id="pImage" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" rows="4" id="pDesc" placeholder="Describe your product..."></textarea>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-4">
+                            <button type="button" class="btn btn-outline" onclick="window.history.back()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveProductToDB()"><i class='bx bx-save'></i> Save Product</button>
+                        </div>
+                    </form>
                 </div>
 
             </div>
@@ -114,14 +96,52 @@
             renderHeader(user);
         }
 
-        function updatePreview() {
-            const name = document.getElementById('pName').value || 'Your Product Name';
-            const price = parseFloat(document.getElementById('pPrice').value || 0).toFixed(2);
-            const img = document.getElementById('pImage').value || 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80';
+        async function saveProductToDB() {
+            const name = document.getElementById('pName').value;
+            const price = document.getElementById('pPrice').value;
+            const quantity = document.getElementById('pStock').value;
+            const category = document.getElementById('pCategory').value;
+            const description = document.getElementById('pDesc').value;
+            
+            // Lấy file ảnh từ input
+            const imageInput = document.getElementById('pImage');
+            const file = imageInput.files[0];
 
-            document.getElementById('previewTitle').innerText = name;
-            document.getElementById('previewPrice').innerText = '$' + price;
-            document.getElementById('previewImg').src = img;
+            if(!name || !price || parseFloat(price) <= 0) {
+                return alert("Vui lòng nhập tên và giá sản phẩm (lớn hơn 0)!");
+            }
+
+            // Sử dụng FormData thay vì JSON
+            const formData = new FormData();
+            formData.append('user_id', user.id);
+            formData.append('name', name);
+            formData.append('price', price);
+            formData.append('quantity', quantity || 0);
+            formData.append('category', category);
+            formData.append('description', description);
+            
+            if (file) {
+                formData.append('image', file);
+            }
+
+            try {
+                // Không set header 'Content-Type', trình duyệt sẽ tự set thành multipart/form-data
+                const response = await fetch('/api/products/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if(response.ok && result.status === 'success') {
+                    alert('Đăng sản phẩm thành công!');
+                    window.location.href = '/shop-products';
+                } else {
+                    alert('Lỗi khi thêm: ' + (result.message || 'Lỗi không xác định'));
+                }
+            } catch (error) {
+                console.error("Lỗi:", error);
+                alert("Không thể kết nối đến máy chủ.");
+            }
         }
     </script>
 </body>

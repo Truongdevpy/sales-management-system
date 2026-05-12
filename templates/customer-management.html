@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Statistics - Sales System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Customer Purchase Statistics</h1>
+                </div>
+
+                <div class="grid grid-cols-4 mb-4">
+                    <div class="card stat-card">
+                        <div class="stat-icon primary"><i class='bx bx-group'></i></div>
+                        <div class="stat-details"><h3 id="totalCustomers">0</h3><p>Total Customers</p></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon success"><i class='bx bx-user-check'></i></div>
+                        <div class="stat-details"><h3 id="activeCustomers">0</h3><p>With Orders</p></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon warning"><i class='bx bx-user-x'></i></div>
+                        <div class="stat-details"><h3 id="inactiveCustomers">0</h3><p>No Orders</p></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon info"><i class='bx bx-wallet'></i></div>
+                        <div class="stat-details"><h3 id="totalSpent">0 VNĐ</h3><p>Total Spent</p></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4 seller-toolbar">
+                        <div class="flex gap-2 seller-filters">
+                            <div class="header-search" style="border: 1px solid var(--border); background: var(--bg);">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="customerKeyword" placeholder="Search customers..." oninput="debouncedLoadCustomers()">
+                            </div>
+                            <select class="form-control" id="customerStatusFilter" style="width: 160px;" onchange="loadCustomers()">
+                                <option value="all">All customers</option>
+                                <option value="active">With orders</option>
+                                <option value="inactive">No orders</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline" onclick="loadCustomers()"><i class='bx bx-refresh'></i> Refresh</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>Orders</th>
+                                    <th>Products Bought</th>
+                                    <th>Total Spent</th>
+                                    <th>Last Order</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        const user = requireAuth(['admin']);
+        let customers = [];
+        let searchTimer = null;
+
+        if (user) {
+            renderSidebarMenu(user.role, 'customer-management');
+            renderHeader(user);
+            loadCustomers();
+        }
+
+        function debouncedLoadCustomers() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadCustomers, 250);
+        }
+
+        async function loadCustomers() {
+            const tbody = document.getElementById('customersBody');
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">Loading...</td></tr>`;
+
+            const keyword = document.getElementById('customerKeyword').value.trim();
+            const status = document.getElementById('customerStatusFilter').value;
+            const params = new URLSearchParams({ keyword, status });
+
+            try {
+                const response = await fetch(`/api/customers/?${params.toString()}`);
+                customers = await response.json();
+                updateCustomerStats();
+                renderCustomersTable();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px; color: var(--danger);">Cannot load customers</td></tr>`;
+            }
+        }
+
+        function updateCustomerStats() {
+            const active = customers.filter(customer => customer.status === 'active').length;
+            const totalSpent = customers.reduce((sum, customer) => sum + Number(customer.totalSpent || 0), 0);
+            document.getElementById('totalCustomers').innerText = customers.length;
+            document.getElementById('activeCustomers').innerText = active;
+            document.getElementById('inactiveCustomers').innerText = customers.length - active;
+            document.getElementById('totalSpent').innerText = formatMoney(totalSpent);
+        }
+
+        function renderCustomersTable() {
+            const tbody = document.getElementById('customersBody');
+            if (!customers.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">No customers found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = customers.map(customer => `
+                <tr>
+                    <td>#${customer.id}</td>
+                    <td><strong>${escapeHtml(customer.fullName || '-')}</strong></td>
+                    <td>${escapeHtml(customer.email || '-')}</td>
+                    <td>${Number(customer.totalOrders || 0)}</td>
+                    <td>${Number(customer.totalProducts || 0)}</td>
+                    <td><strong>${formatMoney(Number(customer.totalSpent || 0))}</strong></td>
+                    <td>${formatDateSafe(customer.lastOrderAt)}</td>
+                    <td>${formatDateSafe(customer.createdAt)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function formatDateSafe(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return value;
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+    </script>
+</body>
+</html>
