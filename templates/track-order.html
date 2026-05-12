@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Orders - Shopping</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .btn-pay {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .text-done {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .qr-payment-container img {
+            width: 210px;
+            height: 210px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>My Orders</h1>
+                </div>
+
+                <div class="grid grid-cols-3 gap-20" style="gap: 24px;">
+                    <div style="grid-column: span 2;">
+                        <div class="card mb-4">
+                            <h3 style="font-size: 16px; margin-bottom: 20px;">Order History</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Payment</th>
+                                            <th>Method</th>
+                                            <th>Shipping</th>
+                                            <th>Quick Pay</th>
+                                            <th>Invoice</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ordersBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="card" style="position: sticky; top: 90px;" id="orderDetailsPanel">
+                            <div class="flex justify-between items-center" style="margin-bottom: 20px;">
+                                <h3 style="font-size: 16px; color: var(--dark);">Order Details</h3>
+                                <span class="badge" style="background: rgba(0,0,0,0.05); color: var(--text);" id="detailOrderId">Select order</span>
+                            </div>
+                            <div id="detailContent" class="text-center text-light mt-4">
+                                <i class='bx bx-package' style="font-size: 40px; margin-bottom: 10px; color: var(--border);"></i>
+                                <p>Click an order to view details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+    const user = requireAuth(['customer']);
+    if (user) {
+        renderSidebarMenu(user.role, 'track-order');
+        renderHeader(user);
+        loadMyOrders();
+    }
+
+    async function loadMyOrders() {
+        try {
+            const response = await fetch(`/api/orders/my-orders/${user.id}`);
+            const orders = await response.json();
+            const tbody = document.getElementById('ordersBody');
+            tbody.innerHTML = orders.length ? '' : '<tr><td colspan="8" class="text-center">Chưa có đơn hàng</td></tr>';
+
+            orders.forEach(order => {
+                const paymentMethod = order.payment_method === 'bank_transfer' ? 'Bank QR' : 'COD';
+                const isPaid = order.payment_status === 'đã thanh toán';
+                const canPay = !isPaid && order.payment_method !== 'cod';
+                const payBtnHtml = canPay
+                    ? `<button onclick="event.stopPropagation(); payNow(${order.id})" class="btn-pay">Thanh toán ngay</button>`
+                    : (isPaid ? `<span class="text-done"><i class='bx bx-check-double'></i> Hoàn tất</span>` : `<span style="font-size: 12px; color: var(--text-light);">COD</span>`);
+
+                tbody.innerHTML += `
+                    <tr onclick="viewOrderDetails(${order.id})" style="cursor: pointer;">
+                        <td><strong>#ORD-${order.id}</strong></td>
+                        <td>${new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                        <td style="color: var(--primary); font-weight: bold;">${formatMoney(order.total_amount)}</td>
+                        <td><span class="badge badge-info">${order.payment_status}</span></td>
+                        <td>${paymentMethod}</td>
+                        <td><span class="badge ${getStatusClass(order.shipping_status)}">${order.shipping_status}</span></td>
+                        <td>${payBtnHtml}</td>
+                        <td>
+                            <button onclick="event.stopPropagation(); window.open('/invoice/${order.id}', '_blank')"
+                                    class="btn-pay" style="background: #64748b;">
+                                <i class='bx bx-file'></i> Hóa đơn
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            console.error("Cannot load orders:", error);
+        }
+    }
+
+    async function viewOrderDetails(orderId) {
+        const detailContent = document.getElementById('detailContent');
+        const detailOrderId = document.getElementById('detailOrderId');
+
+        detailOrderId.innerText = `#ORD-${orderId}`;
+        detailContent.innerHTML = `<div class="text-center"><i class='bx bx-loader-alt bx-spin'></i> Đang tải...</div>`;
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}`);
+            const data = await res.json();
+            const payment = data.payment;
+
+            let html = `
+                <div class="order-info-mini mb-4" style="text-align: left; font-size: 13px;">
+                    <p><strong>Ngày đặt:</strong> ${data.created_at}</p>
+                    <p><strong>Trạng thái giao:</strong> ${data.shipping_status}</p>
+                    <p><strong>Thanh toán:</strong> ${data.payment_status}</p>
+                    <p><strong>Phương thức:</strong> ${payment && payment.method === 'bank_transfer' ? 'Bank QR' : 'COD'}</p>
+                </div>
+                <table class="table-mini" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left;">Sản phẩm</th>
+                            <th>SL</th>
+                            <th style="text-align: right;">Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.items.forEach(item => {
+                html += `
+                    <tr style="border-bottom: 1px dotted var(--border);">
+                        <td style="text-align: left; padding: 8px 0;"><small>${item.product_name}</small></td>
+                        <td style="text-align: center;">${item.quantity}</td>
+                        <td style="text-align: right;">${formatMoney(item.subtotal)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="total-section mt-4" style="border-top: 2px solid var(--primary); padding-top: 15px;">
+                    <div class="flex justify-between items-center">
+                        <span style="font-weight: 500;">Thành tiền:</span>
+                        <span class="text-primary" style="font-size: 1.2rem; font-weight: bold;">${formatMoney(data.total_amount)}</span>
+                    </div>
+                </div>
+            `;
+
+            if (payment && payment.method === 'bank_transfer' && payment.status !== 'paid') {
+                html += `<button onclick="payNow(${orderId})" class="btn-pay" style="width: 100%; margin-top: 16px;">Hiển thị QR thanh toán</button>`;
+            }
+
+            detailContent.innerHTML = html;
+        } catch (e) {
+            detailContent.innerHTML = "Không thể tải chi tiết đơn hàng.";
+        }
+    }
+
+    async function payNow(orderId) {
+        const detailContent = document.getElementById('detailContent');
+        const detailOrderId = document.getElementById('detailOrderId');
+
+        detailOrderId.innerText = `#ORD-${orderId}`;
+        detailContent.innerHTML = `<div class="text-center"><i class='bx bx-loader-alt bx-spin'></i> Đang tạo mã QR...</div>`;
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/payment`, { method: 'POST' });
+            const result = await res.json();
+            if (!res.ok) {
+                detailContent.innerHTML = `<p style="color: var(--danger);">${result.message || 'Không thể tạo QR'}</p>`;
+                return;
+            }
+
+            const payment = result.payment;
+            detailContent.innerHTML = `
+                <div class="qr-payment-container" style="text-align: center; padding: 10px;">
+                    <p style="margin-bottom: 15px; font-weight: 500; color: var(--dark);">Quét mã để chuyển khoản</p>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #eee; display: inline-block;">
+                        <img src="${payment.qrDataUrl}" alt="QR Code">
+                    </div>
+                    <div class="mt-4" style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 13px;">
+                        <p><strong>Shop nhận tiền:</strong> ${escapeHtml(payment.shopName || payment.sellerName || ('Seller #' + payment.sellerId))}</p>
+                        <p><strong>Ngân hàng:</strong> ${escapeHtml(payment.bankName || payment.bankAcqId || '-')}</p>
+                        <p><strong>Số tài khoản:</strong> <span style="font-weight: bold;">${escapeHtml(payment.accountNo || '-')}</span></p>
+                        <p><strong>Chủ tài khoản:</strong> ${escapeHtml(payment.accountName || '-')}</p>
+                        <p><strong>Số tiền:</strong> <span class="text-primary">${formatMoney(payment.amount)}</span></p>
+                        <p><strong>Nội dung:</strong> <span style="color: #2563eb; font-weight: bold;">${payment.paymentCode}</span></p>
+                    </div>
+                    <button onclick="confirmPaymentAfterQR(${orderId})" class="btn-pay" style="width: 100%; margin-top: 20px;">
+                        Tôi đã chuyển khoản thành công
+                    </button>
+                </div>
+            `;
+        } catch (e) {
+            detailContent.innerHTML = "Không thể tạo mã thanh toán.";
+        }
+    }
+
+    async function confirmPaymentAfterQR(orderId) {
+        try {
+            const response = await fetch(`/api/orders/confirm-payment/${orderId}`, { method: 'POST' });
+            const data = await response.json().catch(() => ({}));
+            alert(data.message || 'Đã kiểm tra thanh toán');
+            loadMyOrders();
+            if (response.ok && data.status === 'success') {
+                viewOrderDetails(orderId);
+            }
+        } catch (error) {
+            alert("Không thể kết nối server để kiểm tra thanh toán.");
+        }
+    }
+
+    function getStatusClass(status) {
+        switch(status) {
+            case 'đã giao': return 'badge-success';
+            case 'đang giao': return 'badge-warning';
+            case 'chờ giao': return 'badge-info';
+            default: return 'badge-light';
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+    </script>
+</body>
+</html>

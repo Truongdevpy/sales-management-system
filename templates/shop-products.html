@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Products - Seller Area</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title flex justify-between items-center" style="margin-bottom: 24px;">
+                    <h1>My Products</h1>
+                    <a href="/seller" class="btn btn-primary"><i class='bx bx-plus'></i> Add New</a>
+                </div>
+
+                <div class="grid grid-cols-4 mb-4 gap-4">
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Total Products</p>
+                        <h3 style="font-size: 24px;" id="totalCount">0</h3>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Active Listing</p>
+                        <h3 style="font-size: 24px; color: var(--success);" id="activeCount">0</h3>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <p style="font-size: 13px; color: var(--text-light);">Out of Stock</p>
+                        <h3 style="font-size: 24px; color: var(--danger);" id="oosCount">0</h3>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <select class="form-control" style="width: 200px;" onchange="filterProducts(this.value)">
+                            <option value="all">All Status</option>
+                            <option value="active">Active (In Stock)</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                        
+                        <div class="header-search" style="border: 1px solid var(--border); background: transparent;">
+                            <i class='bx bx-search'></i>
+                            <input type="text" placeholder="Search products...">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="80">Image</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myProductsBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        const user = requireAuth(['seller']);
+        let currentProducts = []; // Biến lưu trữ dữ liệu sản phẩm từ API
+        
+        if (user) {
+            renderSidebarMenu(user.role, 'shop-products');
+            renderHeader(user);
+            fetchAndRenderMyProducts();
+        }
+
+        async function fetchAndRenderMyProducts() {
+            try {
+                // Gọi API để lấy sản phẩm của Seller hiện tại
+                const response = await fetch('/api/products/seller/' + user.id);
+                currentProducts = await response.json();
+                
+                updateStats(currentProducts);
+                renderTable(currentProducts, 'all');
+            } catch (error) {
+                console.error("Lỗi khi lấy dữ liệu:", error);
+                document.getElementById('myProductsBody').innerHTML = `<tr><td colspan="7" class="text-center">Lỗi kết nối máy chủ</td></tr>`;
+            }
+        }
+
+        function updateStats(products) {
+            document.getElementById('totalCount').innerText = products.length;
+            const activeCount = products.filter(p => p.stock > 0).length;
+            document.getElementById('activeCount').innerText = activeCount;
+            document.getElementById('oosCount').innerText = products.length - activeCount;
+        }
+
+        function filterProducts(status) {
+            renderTable(currentProducts, status);
+        }
+
+        function renderTable(products, filterStatus = 'all') {
+            const tbody = document.getElementById('myProductsBody');
+            let html = '';
+
+            let filtered = products;
+            if (filterStatus === 'active') {
+                filtered = products.filter(p => p.stock > 0);
+            } else if (filterStatus === 'out_of_stock') {
+                filtered = products.filter(p => p.stock <= 0);
+            }
+
+            if (filtered.length === 0) {
+                html = `<tr><td colspan="7" class="text-center" style="padding: 30px;">Không tìm thấy sản phẩm nào.</td></tr>`;
+            } else {
+                filtered.forEach(p => {
+                    let isOOS = p.stock <= 0;
+                    let badgeClass = isOOS ? 'badge-danger' : 'badge-active';
+                    let statusText = isOOS ? 'HẾT HÀNG' : 'ĐANG BÁN';
+
+                    html += `
+                        <tr>
+                            <td><img src="${p.image || '/static/default.png'}" onerror="this.src='/static/default.png'" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius);"></td>
+                            <td><strong>${p.name}</strong></td>
+                            <td>${p.category || 'Không có'}</td>
+                            <td style="color: var(--primary); font-weight: 600;">${formatMoney(p.price)}</td>
+                            <td>${p.stock}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-outline" style="padding: 5px 10px;"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="btn btn-danger" style="padding: 5px 10px;" onclick="alert('Tính năng xóa đang phát triển!')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Shopping</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .product-card {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .cart-sidebar-container {
+            position: sticky;
+            top: 90px;
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+        #cartItems {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+            margin-bottom: 15px;
+        }
+        .cart-item-row {
+            background: var(--surface);
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .btn-qty {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .payment-methods {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .payment-methods label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .payment-methods input {
+            accent-color: var(--primary);
+        }
+        .qr-result {
+            text-align: center;
+        }
+        .qr-result img {
+            width: 220px;
+            height: 220px;
+            object-fit: contain;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class='bx bxs-pie-chart-alt-2'></i>
+                    <span>SalesSystem</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu" id="sidebarMenu"></nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header" id="topHeader"></header>
+
+            <div class="page-content">
+                <div class="page-title">
+                    <h1>Shop & Checkout</h1>
+                </div>
+
+                <div class="grid grid-cols-3 gap-20" style="gap: 24px;">
+                    <div style="grid-column: span 2;">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 style="font-size: 18px;">Tất cả sản phẩm</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4" id="productList"></div>
+                    </div>
+
+                    <div>
+                        <div class="card cart-sidebar-container">
+                            <h3 style="margin-bottom: 20px; font-size: 18px; display: flex; justify-content: space-between;">
+                                <span>Giỏ hàng</span>
+                                <span class="badge badge-active" id="cartCount">0</span>
+                            </h3>
+
+                            <div id="cartItems">
+                                <p class="text-center text-light mt-4" style="font-size: 14px;">Giỏ hàng đang trống</p>
+                            </div>
+
+                            <div style="border-top: 1px solid var(--border); padding-top: 15px; background: var(--surface);">
+                                <div class="flex justify-between mb-2">
+                                    <span style="color: var(--text-light);">Tạm tính</span>
+                                    <span style="font-weight: 500;" id="cartSubtotal">0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span style="color: var(--text-light);">Phí vận chuyển</span>
+                                    <span style="font-weight: 500;" id="shippingFee">5.000 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between mt-3 pt-3" style="border-top: 1px dashed var(--border);">
+                                    <span style="font-weight: 600; font-size: 18px;">Tổng tiền</span>
+                                    <span style="font-weight: 700; font-size: 18px; color: var(--primary);" id="cartTotal">0 VNĐ</span>
+                                </div>
+
+                                <div style="margin-top: 15px;">
+                                    <div class="form-group mb-2">
+                                        <input type="text" id="custName" class="form-control" placeholder="Họ tên">
+                                    </div>
+                                    <div class="form-group mb-2">
+                                        <input type="text" id="custPhone" class="form-control" placeholder="SĐT">
+                                    </div>
+                                    <div class="form-group mb-4">
+                                        <textarea id="custAddr" class="form-control" rows="2" placeholder="Địa chỉ..."></textarea>
+                                    </div>
+
+                                    <div class="payment-methods">
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="cod" checked>
+                                            <span>Thanh toán khi nhận hàng (COD)</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="bank_transfer">
+                                            <span>Chuyển khoản ngân hàng bằng QR</span>
+                                        </label>
+                                    </div>
+
+                                    <button class="btn btn-primary" style="width: 100%;" onclick="processCheckout()" id="checkoutBtn" disabled>
+                                        <i class='bx bx-check-double'></i> Đặt hàng ngay
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Thanh toán đơn hàng</h3>
+                <button class="close-modal" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="paymentModalBody"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+    const user = requireAuth(['customer']);
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const SHIPPING_FEE = 5000;
+
+    if (user) {
+        renderSidebarMenu(user.role, 'checkout');
+        renderHeader(user);
+        loadRealProducts();
+        renderCart();
+        document.getElementById('custName').value = user.name || "";
+    }
+
+    async function loadRealProducts() {
+        try {
+            const response = await fetch('/api/products/');
+            const products = await response.json();
+            const container = document.getElementById('productList');
+
+            if (!products.length) {
+                container.innerHTML = '<p>Không có sản phẩm nào.</p>';
+                return;
+            }
+
+            container.innerHTML = products.map(p => `
+                <div class="card product-card">
+                    <img src="${p.image || '/static/default.png'}" class="product-img" onerror="this.src='/static/default.png'">
+                    <div class="product-info">
+                        <div class="product-title">${escapeHtml(p.name)}</div>
+                        <div class="product-price" style="color:var(--primary);">${formatMoney(p.price)}</div>
+                        <p style="font-size: 12px; color: var(--text-light); margin: 5px 0;">Kho: ${p.stock} | ${escapeHtml(p.category || '-')}</p>
+                        <p style="font-size: 12px; color: var(--text-light); margin-bottom: 8px;">Shop: ${escapeHtml(p.shopName || p.sellerName || ('Seller #' + p.sellerId))}</p>
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;"
+                            onclick="addToCart(${p.id}, '${escapeAttr(p.name)}', ${p.price}, ${p.sellerId || 0})">
+                            Thêm vào giỏ
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            document.getElementById('productList').innerHTML = '<p>Lỗi kết nối API.</p>';
+        }
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cartItems');
+        const countEl = document.getElementById('cartCount');
+        const subtotalEl = document.getElementById('cartSubtotal');
+        const totalEl = document.getElementById('cartTotal');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+
+        if (!cart.length) {
+            container.innerHTML = '<p class="text-center text-light mt-4" style="font-size: 14px;">Giỏ hàng đang trống</p>';
+            countEl.innerText = '0';
+            subtotalEl.innerText = formatMoney(0);
+            totalEl.innerText = formatMoney(0);
+            checkoutBtn.disabled = true;
+            return;
+        }
+
+        let subtotal = 0;
+        container.innerHTML = cart.map((item, index) => {
+            subtotal += item.price * item.quantity;
+            return `
+                <div class="cart-item-row">
+                    <div class="flex justify-between items-start mb-2">
+                        <div style="font-weight: 600; font-size: 14px;">${escapeHtml(item.name)}</div>
+                        <button onclick="removeFromCart(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer;">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div style="color: var(--primary); font-weight: 500;">${formatMoney(item.price)}</div>
+                        <div class="qty-controls">
+                            <button class="btn-qty" onclick="updateQuantity(${index}, -1)">-</button>
+                            <span style="min-width: 20px; text-align: center;">${item.quantity}</span>
+                            <button class="btn-qty" onclick="updateQuantity(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        countEl.innerText = cart.length;
+        subtotalEl.innerText = formatMoney(subtotal);
+        totalEl.innerText = formatMoney(subtotal + SHIPPING_FEE);
+        checkoutBtn.disabled = false;
+    }
+
+    function addToCart(id, name, price, sellerId) {
+        const existing = cart.find(i => i.product_id === id);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({ product_id: id, name, price, quantity: 1, seller_id: sellerId });
+        }
+        saveCart();
+    }
+
+    function updateQuantity(index, change) {
+        cart[index].quantity += change;
+        if (cart[index].quantity < 1) cart.splice(index, 1);
+        saveCart();
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        saveCart();
+    }
+
+    function saveCart() {
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    async function processCheckout() {
+        if (!cart.length) return;
+
+        const info = {
+            name: document.getElementById('custName').value.trim(),
+            phone: document.getElementById('custPhone').value.trim(),
+            address: document.getElementById('custAddr').value.trim()
+        };
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+        if (!info.name || !info.phone || !info.address) {
+            alert("Vui lòng điền đầy đủ thông tin giao hàng!");
+            return;
+        }
+
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        checkoutBtn.disabled = true;
+        checkoutBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Đang xử lý...";
+
+        try {
+            const response = await fetch('/api/orders/place-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_id: user.id,
+                    cart_data: cart,
+                    payment_method: paymentMethod,
+                    shipping_fee: SHIPPING_FEE
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                alert('Lỗi: ' + (result.message || 'Không thể hoàn tất đơn hàng'));
+                return;
+            }
+
+            localStorage.removeItem('cart');
+            cart = [];
+            renderCart();
+
+            if (result.payment && result.payment.method === 'bank_transfer') {
+                showPaymentModal(result.order_id, result.payment);
+            } else {
+                alert('Đặt hàng thành công! Mã đơn: ' + result.order_id);
+                window.location.href = '/track-order';
+            }
+        } catch (error) {
+            alert('Lỗi kết nối server!');
+        } finally {
+            checkoutBtn.disabled = false;
+            checkoutBtn.innerHTML = "<i class='bx bx-check-double'></i> Đặt hàng ngay";
+        }
+    }
+
+    function showPaymentModal(orderId, payment) {
+        document.getElementById('paymentModalBody').innerHTML = `
+            <div class="qr-result">
+                <p style="margin-bottom: 12px;">Quét mã QR để chuyển khoản đúng số tiền và nội dung.</p>
+                <img src="${payment.qrDataUrl}" alt="QR thanh toán">
+                <div style="text-align: left; background: var(--bg); padding: 14px; border-radius: 8px; margin-top: 14px;">
+                    <p><strong>Mã đơn:</strong> #ORD-${orderId}</p>
+                    <p><strong>Shop nhận tiền:</strong> ${escapeHtml(payment.shopName || payment.sellerName || ('Seller #' + payment.sellerId))}</p>
+                    <p><strong>Ngân hàng:</strong> ${escapeHtml(payment.bankName || payment.bankAcqId || '-')}</p>
+                    <p><strong>Số tài khoản:</strong> <strong>${escapeHtml(payment.accountNo || '-')}</strong></p>
+                    <p><strong>Chủ tài khoản:</strong> ${escapeHtml(payment.accountName || '-')}</p>
+                    <p><strong>Số tiền:</strong> ${formatMoney(payment.amount)}</p>
+                    <p><strong>Nội dung CK:</strong> <strong style="color: var(--primary);">${payment.paymentCode}</strong></p>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="confirmPaymentAfterQR(${orderId})">
+                    Tôi đã chuyển khoản
+                </button>
+                <button class="btn btn-outline" style="width: 100%; margin-top: 8px;" onclick="window.location.href='/track-order'">
+                    Xem đơn hàng
+                </button>
+            </div>
+        `;
+        document.getElementById('paymentModal').classList.add('active');
+    }
+
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.remove('active');
+    }
+
+    async function confirmPaymentAfterQR(orderId) {
+        try {
+            const response = await fetch(`/api/orders/confirm-payment/${orderId}`, { method: 'POST' });
+            const result = await response.json().catch(() => ({}));
+            alert(result.message || 'Đã kiểm tra thanh toán');
+            if (response.ok && result.status === 'success') {
+                window.location.href = '/track-order';
+            }
+        } catch (error) {
+            alert('Không thể kết nối server để kiểm tra thanh toán');
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function escapeAttr(value) {
+        return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+    </script>
+</body>
+</html>

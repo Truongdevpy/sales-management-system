@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sales Management System</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>Sales Management</h2>
+                <p id="authSubtitle">Login to your account</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="loginTabBtn" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" id="registerTabBtn" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <div class="auth-body">
+                <form id="loginForm" onsubmit="loginWithAccount(event)">
+                    <div class="form-group">
+                        <label class="form-label">Username or Email</label>
+                        <input type="text" class="form-control" id="loginUsername" placeholder="Enter username or email" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                    <p class="auth-message" id="loginMessage"></p>
+                </form>
+
+                <form id="registerForm" class="hidden" onsubmit="registerAccount(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="registerFullName" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username or Email</label>
+                        <input type="text" class="form-control" id="registerUsername" placeholder="Enter username or email" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="registerPassword" placeholder="Create password" required>
+                        <p class="form-hint">At least 6 characters, including letters and numbers.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Account Type</label>
+                        <select class="form-control" id="registerRole" onchange="toggleShopName()">
+                            <option value="customer">Customer</option>
+                            <option value="seller">Seller</option>
+                        </select>
+                    </div>
+                    <div class="seller-register-fields hidden" id="sellerRegisterFields">
+                        <div class="form-group">
+                            <label class="form-label">Shop Name</label>
+                            <input type="text" class="form-control" id="registerShopName" placeholder="Enter shop name">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="registerPhone" placeholder="0901234567">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Type</label>
+                                <select class="form-control" id="registerBusinessType">
+                                    <option value="">Select type</option>
+                                    <option value="Dien thoai">Dien thoai</option>
+                                    <option value="Thoi trang">Thoi trang</option>
+                                    <option value="Do gia dung">Do gia dung</option>
+                                    <option value="My pham">My pham</option>
+                                    <option value="Khac">Khac</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Shop Address</label>
+                            <input type="text" class="form-control" id="registerAddress" placeholder="Shop address">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Shop Description</label>
+                            <textarea class="form-control" id="registerShopDescription" rows="3" placeholder="Short description about your shop"></textarea>
+                        </div>
+                        <div class="auth-rules">
+                            <strong>Seller registration rules</strong>
+                            <span>Shop name must be unique and 3-100 characters.</span>
+                            <span>Phone must contain 9-11 digits.</span>
+                            <span>Seller account stays pending until admin approval.</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                    <p class="auth-message" id="registerMessage"></p>
+                </form>
+            </div>
+
+            <div class="demo-roles">
+                <h4>Demo Login (Quick Access)</h4>
+                <div class="grid grid-cols-3">
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('admin')">
+                        <i class='bx bx-crown'></i> Admin
+                    </button>
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('seller')">
+                        <i class='bx bx-store'></i> Seller
+                    </button>
+                    <button class="btn btn-outline" style="font-size: 12px; padding: 8px;" onclick="loginAs('customer')">
+                        <i class='bx bx-user'></i> Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        if(getCurrentUser()) {
+            window.location.href = '/dashboard';
+        }
+
+        function switchAuthTab(tab) {
+            const isLogin = tab === 'login';
+            document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+            document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+            document.getElementById('loginTabBtn').classList.toggle('active', isLogin);
+            document.getElementById('registerTabBtn').classList.toggle('active', !isLogin);
+            document.getElementById('authSubtitle').innerText = isLogin ? 'Login to your account' : 'Create a new account';
+            clearMessages();
+        }
+
+        function clearMessages() {
+            document.getElementById('loginMessage').innerText = '';
+            document.getElementById('registerMessage').innerText = '';
+        }
+
+        function toggleShopName() {
+            const isSeller = document.getElementById('registerRole').value === 'seller';
+            document.getElementById('sellerRegisterFields').classList.toggle('hidden', !isSeller);
+
+            ['registerShopName', 'registerPhone', 'registerBusinessType', 'registerAddress', 'registerShopDescription']
+                .forEach(id => {
+                    document.getElementById(id).required = isSeller;
+                });
+        }
+
+        async function loginWithAccount(event) {
+            event.preventDefault();
+            const message = document.getElementById('loginMessage');
+            message.className = 'auth-message';
+            message.innerText = 'Checking account...';
+
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('loginUsername').value,
+                        password: document.getElementById('loginPassword').value
+                    })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    message.classList.add('error');
+                    message.innerText = result.message || 'Login failed';
+                    return;
+                }
+
+                localStorage.setItem('currentUser', JSON.stringify(result.user));
+                window.location.href = '/dashboard';
+            } catch (error) {
+                message.classList.add('error');
+                message.innerText = 'Cannot connect to server';
+            }
+        }
+
+        async function registerAccount(event) {
+            event.preventDefault();
+            const message = document.getElementById('registerMessage');
+            message.className = 'auth-message';
+            message.innerText = 'Creating account...';
+
+            const role = document.getElementById('registerRole').value;
+            const payload = {
+                full_name: document.getElementById('registerFullName').value.trim(),
+                username: document.getElementById('registerUsername').value.trim(),
+                password: document.getElementById('registerPassword').value,
+                role: role,
+                shop_name: document.getElementById('registerShopName').value.trim(),
+                phone: document.getElementById('registerPhone').value.trim(),
+                business_type: document.getElementById('registerBusinessType').value,
+                address: document.getElementById('registerAddress').value.trim(),
+                shop_description: document.getElementById('registerShopDescription').value.trim()
+            };
+
+            const clientError = validateRegisterPayload(payload);
+            if (clientError) {
+                message.classList.add('error');
+                message.innerText = clientError;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    message.classList.add('error');
+                    message.innerText = result.message || 'Register failed';
+                    return;
+                }
+
+                message.classList.add('success');
+                message.innerText = result.message;
+
+                if (role === 'customer' && result.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    window.location.href = '/dashboard';
+                    return;
+                }
+
+                document.getElementById('registerForm').reset();
+                toggleShopName();
+            } catch (error) {
+                message.classList.add('error');
+                message.innerText = 'Cannot connect to server';
+            }
+        }
+
+        function validateRegisterPayload(data) {
+            if (!data.full_name || data.full_name.length < 4) {
+                return 'Full name must be at least 4 characters.';
+            }
+            if (!/^[A-Za-z0-9@._-]{4,50}$/.test(data.username)) {
+                return 'Username/email must be 4-50 characters and contain no spaces.';
+            }
+            if (data.password.length < 6 || !/[A-Za-z]/.test(data.password) || !/[0-9]/.test(data.password)) {
+                return 'Password must be at least 6 characters and include letters and numbers.';
+            }
+            if (data.role === 'seller') {
+                const phone = data.phone.replace(/[\s.\-()]/g, '');
+                if (!data.shop_name || data.shop_name.length < 3 || data.shop_name.length > 100) {
+                    return 'Shop name must be 3-100 characters.';
+                }
+                if (!/^\d{9,11}$/.test(phone)) {
+                    return 'Phone must contain 9-11 digits.';
+                }
+                if (!data.business_type) {
+                    return 'Please choose business type.';
+                }
+                if (!data.address || data.address.length < 6) {
+                    return 'Please enter a clear shop address.';
+                }
+                if (!data.shop_description || data.shop_description.length < 10) {
+                    return 'Shop description must be at least 10 characters.';
+                }
+            }
+            return '';
+        }
+    </script>
+</body>
+</html>
