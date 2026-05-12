@@ -29,22 +29,91 @@ const DB = {
 
 // --- Session Management ---
 
-function loginAs(role) {
+let currentUserCache = null;
+
+async function loginAs(role) {
+    const demoAccounts = {
+        admin: { username: 'admin', password: 'admin' },
+        seller: { username: 'tuannt03', password: '123' },
+        customer: { username: '1', password: '1' },
+    };
+    const demoAccount = demoAccounts[role];
+    if (demoAccount) {
+        try {
+            const response = await fetch('/api/users/login', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(demoAccount),
+            });
+            const result = await response.json();
+            if (response.ok && result.user) {
+                localStorage.setItem('currentUser', JSON.stringify(result.user));
+                currentUserCache = result.user;
+                window.location.href = '/dashboard';
+                return;
+            }
+        } catch (error) {
+            console.error('Quick login failed:', error);
+        }
+    }
+
     const user = DB.users.find(u => u.role === role);
     if(user) {
         localStorage.setItem('currentUser', JSON.stringify(user));
+        currentUserCache = user;
         window.location.href = '/dashboard';
     }
 }
 
-function logout() {
-    localStorage.removeItem('currentUser');
-    window.location.href = '/';
+async function logout() {
+    try {
+        await fetch('/api/users/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+        });
+    } catch (error) {
+        console.error('Logout failed:', error);
+    } finally {
+        localStorage.removeItem('currentUser');
+        currentUserCache = null;
+        window.location.href = '/';
+    }
+}
+
+function getStoredUser() {
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
 }
 
 function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
+    if (currentUserCache) {
+        return currentUserCache;
+    }
+    currentUserCache = getStoredUser();
+    return currentUserCache;
+}
+
+async function refreshSessionUser() {
+    try {
+        const response = await fetch('/api/users/session', {
+            method: 'GET',
+            credentials: 'same-origin',
+        });
+        if (!response.ok) return null;
+
+        const result = await response.json();
+        if (result.authenticated && result.user) {
+            currentUserCache = result.user;
+            localStorage.setItem('currentUser', JSON.stringify(result.user));
+            return result.user;
+        }
+    } catch (error) {
+        console.error('Cannot load session user:', error);
+    }
+    currentUserCache = null;
+    localStorage.removeItem('currentUser');
+    return null;
 }
 
 // --- Auth & Role Checking ---
@@ -64,6 +133,10 @@ function requireAuth(allowedRoles = []) {
 
     return user;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    refreshSessionUser();
+});
 
 function renderAccessDenied() {
     const layout = document.querySelector('.app-layout');

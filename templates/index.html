@@ -155,6 +155,7 @@
             try {
                 const response = await fetch('/api/users/login', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         username: document.getElementById('loginUsername').value,
@@ -206,6 +207,7 @@
             try {
                 const response = await fetch('/api/users/register', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });

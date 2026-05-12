@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Statistics - Sales System</title>
+    <title>Customer Manager - Sales System</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -24,7 +24,7 @@
 
             <div class="page-content">
                 <div class="page-title">
-                    <h1>Customer Purchase Statistics</h1>
+                    <h1>Customer Manager</h1>
                 </div>
 
                 <div class="grid grid-cols-4 mb-4">
@@ -68,12 +68,13 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Customer</th>
-                                    <th>Email</th>
+                                    <th>Username</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
                                     <th>Orders</th>
-                                    <th>Products Bought</th>
                                     <th>Total Spent</th>
                                     <th>Last Order</th>
-                                    <th>Joined</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="customersBody"></tbody>
@@ -82,6 +83,16 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal seller-modal">
+            <div class="modal-header">
+                <h3 id="customerModalTitle">Customer Details</h3>
+                <button class="close-modal" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="customerModalBody"></div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
@@ -93,6 +104,16 @@
         if (user) {
             renderSidebarMenu(user.role, 'customer-management');
             renderHeader(user);
+            initCustomerManager();
+        }
+
+        async function initCustomerManager() {
+            const sessionUser = await refreshSessionUser();
+            if (!sessionUser || sessionUser.role !== 'admin') {
+                localStorage.removeItem('currentUser');
+                window.location.href = '/';
+                return;
+            }
             loadCustomers();
         }
 
@@ -103,19 +124,24 @@
 
         async function loadCustomers() {
             const tbody = document.getElementById('customersBody');
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">Loading...</td></tr>`;
+            tbody.innerHTML = loadingRow(9);
 
             const keyword = document.getElementById('customerKeyword').value.trim();
             const status = document.getElementById('customerStatusFilter').value;
             const params = new URLSearchParams({ keyword, status });
 
             try {
-                const response = await fetch(`/api/customers/?${params.toString()}`);
+                const response = await fetch(`/api/customers/management?${params.toString()}`, { credentials: 'same-origin' });
+                if (response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                }
                 customers = await response.json();
+                if (!response.ok) throw new Error('Cannot load customers');
                 updateCustomerStats();
                 renderCustomersTable();
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px; color: var(--danger);">Cannot load customers</td></tr>`;
+                tbody.innerHTML = errorRow(9, 'Cannot load customers');
             }
         }
 
@@ -131,22 +157,189 @@
         function renderCustomersTable() {
             const tbody = document.getElementById('customersBody');
             if (!customers.length) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;">No customers found</td></tr>`;
+                tbody.innerHTML = emptyRow(9, 'No customers found');
                 return;
             }
 
             tbody.innerHTML = customers.map(customer => `
                 <tr>
                     <td>#${customer.id}</td>
-                    <td><strong>${escapeHtml(customer.fullName || '-')}</strong></td>
-                    <td>${escapeHtml(customer.email || '-')}</td>
+                    <td>
+                        <strong>${escapeHtml(customer.fullName || '-')}</strong>
+                        <div style="color: var(--text-light); font-size: 12px;">${formatDateSafe(customer.createdAt)}</div>
+                    </td>
+                    <td>${escapeHtml(customer.username || '-')}</td>
+                    <td>${escapeHtml(customer.phone || '-')}</td>
+                    <td>${escapeHtml(customer.address || '-')}</td>
                     <td>${Number(customer.totalOrders || 0)}</td>
-                    <td>${Number(customer.totalProducts || 0)}</td>
                     <td><strong>${formatMoney(Number(customer.totalSpent || 0))}</strong></td>
                     <td>${formatDateSafe(customer.lastOrderAt)}</td>
-                    <td>${formatDateSafe(customer.createdAt)}</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline btn-icon-sm" title="View" onclick="openCustomerDetail(${customer.id})"><i class='bx bx-show'></i></button>
+                            <button class="btn btn-outline btn-icon-sm" title="Edit" onclick="openCustomerEdit(${customer.id})"><i class='bx bx-edit'></i></button>
+                            <button class="btn btn-danger btn-icon-sm" title="Delete" onclick="deleteCustomer(${customer.id})"><i class='bx bx-trash'></i></button>
+                        </div>
+                    </td>
                 </tr>
             `).join('');
+        }
+
+        async function openCustomerDetail(id) {
+            document.getElementById('customerModalTitle').innerText = 'Customer Details';
+            document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="padding: 30px;">Loading...</p>`;
+            document.getElementById('customerModal').classList.add('active');
+
+            try {
+                const response = await fetch(`/api/customers/management/${id}`, { credentials: 'same-origin' });
+                const customer = await response.json();
+                if (!response.ok) {
+                    document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="color: var(--danger);">${customer.message || 'Customer not found'}</p>`;
+                    return;
+                }
+                renderCustomerDetail(customer);
+            } catch (error) {
+                document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="color: var(--danger);">Cannot load customer</p>`;
+            }
+        }
+
+        function renderCustomerDetail(customer) {
+            document.getElementById('customerModalBody').innerHTML = `
+                <div class="seller-detail-grid mb-4">
+                    <div><p class="seller-field-label">Full Name</p><p class="seller-field-value">${escapeHtml(customer.fullName || '-')}</p></div>
+                    <div><p class="seller-field-label">Username</p><p class="seller-field-value">${escapeHtml(customer.username || '-')}</p></div>
+                    <div><p class="seller-field-label">Phone</p><p class="seller-field-value">${escapeHtml(customer.phone || '-')}</p></div>
+                    <div><p class="seller-field-label">Address</p><p class="seller-field-value">${escapeHtml(customer.address || '-')}</p></div>
+                    <div><p class="seller-field-label">Joined</p><p class="seller-field-value">${formatDateSafe(customer.createdAt)}</p></div>
+                    <div><p class="seller-field-label">Status</p><p class="seller-field-value"><span class="badge ${customer.status === 'active' ? 'badge-success' : 'badge-warning'}">${customer.status}</span></p></div>
+                </div>
+                <div class="grid grid-cols-4 mb-4 seller-detail-stats">
+                    <div class="seller-metric"><strong>${Number(customer.totalOrders || 0)}</strong><span>Orders</span></div>
+                    <div class="seller-metric"><strong>${Number(customer.totalProducts || 0)}</strong><span>Products</span></div>
+                    <div class="seller-metric"><strong>${formatMoney(Number(customer.totalSpent || 0))}</strong><span>Total Spent</span></div>
+                    <div class="seller-metric"><strong>${formatDateSafe(customer.lastOrderAt)}</strong><span>Last Order</span></div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button class="btn btn-outline" onclick="openCustomerEdit(${customer.id})"><i class='bx bx-edit'></i> Edit</button>
+                    <button class="btn btn-danger" onclick="deleteCustomer(${customer.id})"><i class='bx bx-trash'></i> Delete</button>
+                </div>
+            `;
+        }
+
+        async function openCustomerEdit(id) {
+            document.getElementById('customerModalTitle').innerText = 'Edit Customer';
+            document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="padding: 30px;">Loading...</p>`;
+            document.getElementById('customerModal').classList.add('active');
+
+            try {
+                const response = await fetch(`/api/customers/management/${id}`, { credentials: 'same-origin' });
+                const customer = await response.json();
+                if (!response.ok) {
+                    document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="color: var(--danger);">${customer.message || 'Customer not found'}</p>`;
+                    return;
+                }
+                renderCustomerEdit(customer);
+            } catch (error) {
+                document.getElementById('customerModalBody').innerHTML = `<p class="text-center" style="color: var(--danger);">Cannot load customer</p>`;
+            }
+        }
+
+        function renderCustomerEdit(customer) {
+            document.getElementById('customerModalBody').innerHTML = `
+                <form id="customerEditForm" onsubmit="saveCustomer(event, ${customer.id})">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="form-group">
+                            <label>Full name</label>
+                            <input class="form-control" id="editFullName" value="${escapeAttr(customer.fullName || '')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Username / Email</label>
+                            <input class="form-control" id="editUsername" value="${escapeAttr(customer.username || '')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input class="form-control" id="editPhone" value="${escapeAttr(customer.phone || '')}" placeholder="0901000001">
+                        </div>
+                        <div class="form-group">
+                            <label>New password</label>
+                            <input class="form-control" id="editPassword" type="password" placeholder="Leave blank">
+                        </div>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label>Address</label>
+                        <input class="form-control" id="editAddress" value="${escapeAttr(customer.address || '')}">
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" class="btn btn-outline" onclick="closeCustomerModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class='bx bx-save'></i> Save</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        async function saveCustomer(event, id) {
+            event.preventDefault();
+            const payload = {
+                fullName: document.getElementById('editFullName').value.trim(),
+                username: document.getElementById('editUsername').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                address: document.getElementById('editAddress').value.trim(),
+                password: document.getElementById('editPassword').value,
+            };
+
+            try {
+                const response = await fetch(`/api/customers/management/${id}`, {
+                    method: 'PUT',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    alert(result.message || 'Cannot update customer');
+                    return;
+                }
+                closeCustomerModal();
+                loadCustomers();
+            } catch (error) {
+                alert('Cannot connect to server');
+            }
+        }
+
+        async function deleteCustomer(id) {
+            if (!confirm('Delete this customer account? Related orders may also be removed.')) return;
+
+            try {
+                const response = await fetch(`/api/customers/management/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    alert(result.message || 'Cannot delete customer');
+                    return;
+                }
+                closeCustomerModal();
+                loadCustomers();
+            } catch (error) {
+                alert('Cannot connect to server');
+            }
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.remove('active');
+        }
+
+        function loadingRow(colspan) {
+            return `<tr><td colspan="${colspan}" class="text-center" style="padding: 30px;">Loading...</td></tr>`;
+        }
+
+        function emptyRow(colspan, message) {
+            return `<tr><td colspan="${colspan}" class="text-center" style="padding: 30px;">${message}</td></tr>`;
+        }
+
+        function errorRow(colspan, message) {
+            return `<tr><td colspan="${colspan}" class="text-center" style="padding: 30px; color: var(--danger);">${message}</td></tr>`;
         }
 
         function formatDateSafe(value) {
@@ -164,6 +357,10 @@
                 '"': '&quot;',
                 "'": '&#39;'
             }[char]));
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value).replace(/`/g, '&#96;');
         }
     </script>
 </body>

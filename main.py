@@ -1,3 +1,6 @@
+import os
+from datetime import timedelta
+
 from flask import Flask, render_template
 from sqlalchemy import text
 from models import db
@@ -11,6 +14,10 @@ app = Flask(__name__)
 # Lưu ý: Xóa dấu :"" nếu bạn dùng XAMPP mặc định không mật khẩu
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root@localhost/sales-management-system'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sales-management-system-dev-secret')
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
 # Khởi tạo db với app
 db.init_app(app)

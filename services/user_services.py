@@ -1,6 +1,6 @@
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from sqlalchemy import func, or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -75,6 +75,8 @@ class UserService:
         message = "Dang ky thanh cong"
         if role == 'seller':
             message = "Dang ky seller thanh cong. Vui long cho admin duyet."
+        else:
+            self._set_login_session(user)
 
         return {
             "status": "success",
@@ -104,7 +106,18 @@ class UserService:
             if user.seller_status == 'rejected':
                 return {"status": "error", "message": "Tai khoan seller da bi tu choi"}, 403
 
+        self._set_login_session(user)
         return {"status": "success", "user": user.to_session_dict()}, 200
+
+    def get_current_session_user(self):
+        current_user = session.get('user')
+        if not current_user:
+            return {"authenticated": False, "user": None}
+        return {"authenticated": True, "user": current_user}
+
+    def logout(self):
+        session.clear()
+        return {"status": "success", "message": "Dang xuat thanh cong"}
 
     def get_seller_requests(self):
         users = User.query.filter(User.role == 'seller').order_by(User.created_at.desc()).all()
@@ -439,6 +452,10 @@ class UserService:
     def _is_valid_phone(self, phone):
         return bool(re.fullmatch(r"\d{9,11}", phone or ""))
 
+    def _set_login_session(self, user):
+        session.permanent = True
+        session['user'] = user.to_session_dict()
+
 
 @user_bp.route('/register', methods=['POST'])
 def api_register():
@@ -452,6 +469,18 @@ def api_login():
     service = UserService(db)
     result, status_code = service.login(request.get_json() or {})
     return jsonify(result), status_code
+
+
+@user_bp.route('/session', methods=['GET'])
+def api_get_session_user():
+    service = UserService(db)
+    return jsonify(service.get_current_session_user()), 200
+
+
+@user_bp.route('/logout', methods=['POST'])
+def api_logout():
+    service = UserService(db)
+    return jsonify(service.logout()), 200
 
 
 @user_bp.route('/seller-requests', methods=['GET'])

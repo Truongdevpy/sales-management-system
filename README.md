@@ -4,13 +4,15 @@ Hệ thống quản lý bán hàng được xây dựng bằng Flask, Flask-SQLA
 
 ## Chức năng chính
 
-### 1. Tài khoản và phân quyền
+### 1. Tài khoản, phân quyền và session
 
 - Đăng nhập, đăng ký tài khoản.
 - Phân quyền người dùng theo `admin`, `seller`, `customer`.
 - Customer đăng ký xong có thể đăng nhập ngay.
 - Seller đăng ký xong ở trạng thái `pending` và phải chờ admin duyệt.
-- Seller bị `pending` hoặc `rejected` không được đăng nhập vào hệ thống.
+- Seller bị `pending` hoặc `rejected` không được đăng nhập.
+- Đăng nhập sử dụng Flask session/cookie để lưu trạng thái người dùng phía server.
+- Có API kiểm tra session hiện tại và đăng xuất.
 
 File liên quan:
 
@@ -18,6 +20,7 @@ File liên quan:
 models/user_model.py
 services/user_services.py
 templates/index.html
+static/app.js
 ```
 
 ### 2. Quản lý seller trong admin
@@ -38,7 +41,26 @@ models/user_model.py
 static/style.css
 ```
 
-### 3. Quản lý sản phẩm
+### 3. Customer Manager
+
+- Admin quản lý danh sách customer từ bảng `users` với `role = customer`.
+- Tìm kiếm customer theo tên, username, số điện thoại hoặc địa chỉ.
+- Lọc customer theo trạng thái có đơn hàng hoặc chưa có đơn hàng.
+- Xem chi tiết customer.
+- Sửa thông tin customer: họ tên, username, số điện thoại, địa chỉ, mật khẩu.
+- Xóa tài khoản customer.
+- Hiển thị thống kê số đơn, số sản phẩm đã mua, tổng tiền đã chi và ngày đặt hàng gần nhất.
+- Các API quản lý customer yêu cầu session admin.
+
+File liên quan:
+
+```text
+services/customer_services.py
+templates/customer-management.html
+static/app.js
+```
+
+### 4. Quản lý sản phẩm
 
 - Xem danh sách sản phẩm.
 - Thêm, sửa, xóa sản phẩm.
@@ -57,27 +79,25 @@ templates/product-management.html
 static/app.js
 ```
 
-### 4. Quản lý khách hàng và đơn hàng
+### 5. Quản lý đơn hàng và vận chuyển
 
-- Quản lý thông tin khách hàng.
-- Theo dõi đơn hàng.
-- Lưu chi tiết sản phẩm trong từng đơn hàng.
-- Hiển thị hóa đơn và trạng thái thanh toán.
+- Lưu đơn hàng và chi tiết sản phẩm trong từng đơn.
+- Theo dõi trạng thái thanh toán và trạng thái giao hàng.
+- Seller xem đơn hàng của shop mình.
+- Chỉ cho xác nhận giao hàng khi đơn đã thanh toán.
+- Hiển thị hóa đơn và lịch sử đơn hàng cho customer.
 
 File liên quan:
 
 ```text
-models/customer_model.py
 models/order_model.py
-services/customer_services.py
 services/order_services.py
-templates/customer-management.html
 templates/order-management.html
 templates/track-order.html
 templates/invoice.html
 ```
 
-### 5. Thống kê shop và người mua hàng
+### 6. Thống kê shop và người mua hàng
 
 - Admin xem thống kê từng shop.
 - Thống kê số sản phẩm, số người mua, số đơn hàng và tổng doanh thu.
@@ -99,7 +119,7 @@ services/user_services.py
 services/customer_services.py
 ```
 
-### 6. Thanh toán
+### 7. Thanh toán
 
 Hệ thống hỗ trợ nhiều hình thức thanh toán, gồm thanh toán khi nhận hàng và chuyển khoản ngân hàng bằng QR.
 
@@ -181,6 +201,6 @@ Một số trang chính:
 
 ## Ghi chú
 
-- File `main.py` có phần kiểm tra và bổ sung một số cột/bảng cần thiết khi chạy dự án.
+- File `main.py` có cấu hình session/cookie và phần kiểm tra, bổ sung một số cột/bảng cần thiết khi chạy dự án.
 - Seller cần cấu hình ngân hàng trước khi dùng thanh toán chuyển khoản bằng QR.
 - Token ngân hàng dùng để rà soát lịch sử giao dịch khi customer xác nhận đã chuyển khoản.
